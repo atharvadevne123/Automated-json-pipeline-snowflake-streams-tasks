@@ -1,0 +1,295 @@
+every day -> 9am
+SCHEDULE = 'USING CRON 0 * * * * America/Los_Angeles'
+
+
+CREATE or replace TASK mytask_minute
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+  AS 
+BEGIN  
+INSERT INTO mytable(ts) VALUES(CURRENT_TIMESTAMP);
+INSERT INTO mytable1(ts) VALUES(CURRENT_TIMESTAMP);
+end;
+
+--- procedure 
+
+alter task mytask_minute1 suspend
+
+create table mytable1(ts timestamp)
+
+INSERT INTO mytable(ts) VALUES(CURRENT_TIMESTAMP);
+
+select * from mytable
+select * from mytable1
+
+
+CREATE or replace TASK mytask_minute
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+  AS 
+BEGIN  
+INSERT INTO mytable(ts) VALUES(CURRENT_TIMESTAMP);
+end;
+
+CREATE or replace TASK mytask_minute1
+  WAREHOUSE = COMPUTE_WH
+  after mytask_minute , mytask_minute2
+  AS 
+BEGIN  
+INSERT INTO mytable1(ts) VALUES(CURRENT_TIMESTAMP);
+end;
+
+
+
+alter task mytask_minute resume;
+alter task mytask_minute1 resume;
+
+truncate table mytable1;
+
+
+create or replace table employees (id int , salary int)
+insert into employees values (3,400)
+update employees set salary = 5000 where id =1
+select * from employees
+delete from employees where id =1
+create or replace stream employees_stream on table employees
+create or replace stream employees_stream1 on table employees
+append_only=true
+show streams
+
+select * from employees_stream
+select * from employees_stream1
+
+
+
+create or replace table employees_consume (id int , salary int)
+
+insert into employees_consume select id , salary from employees_stream where metadata$action='INSERT'
+select * from employees_consume
+
+CREATE or replace TASK mytask_minute
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+  when system$stream_has_data('EMPLOYEES_STREAM') as
+  AS 
+BEGIN  
+INSERT INTO mytable(ts) select * from EMPLOYEES_STREAM
+end;
+
+begin 
+insert into employees_consume select id , salary from employees_stream;
+insert into employees_consume1 select id , salary from employees_stream;
+end;
+select * from employees_consume1
+create table employees_consume1 like employees_consume
+
+assigmnet day 5 :
+
+--external stage @s3_ext_stage_json
+
+create or replace stage s3_ext_stage_json
+storage_integration=s3_int
+file_format=myjson
+url = 's3://ns-snowflake07/integration/';
+
+
+create or replace TABLE NAMASTEMART.DW.CUSTOMERS (
+    customer_key int,
+	CUSTOMER_ID int,
+	EMAIL VARCHAR(100),
+	NAME VARCHAR(100),
+	ADDRESS VARCHAR(500)
+);
+
+create or replace TABLE NAMASTEMART.DW.PRODUCTS (
+    product_key int,
+	PRODUCT_ID int,
+	NAME VARCHAR(100),
+	CATEGORY VARCHAR(100),
+	PRICE NUMBER(38,0)
+);
+
+create or replace TABLE NAMASTEMART.DW.ORDERS (
+	ORDER_ID int,
+	ORDER_DATE DATE,
+	CUSTOMER_KEY int,
+	PRODUCT_key int,
+	QUANTITY int
+);
+
+create or replace sequence seq_product;
+create or replace  sequence seq_customer;
+
+select seq_product.nextval
+create or replace table json_data (mydata variant);
+truncate table json_data;
+select * from json_data
+
+
+create or replace task t_raw_load
+warehouse = COMPUTE_WH
+schedule = '1 minute'
+when 
+as
+begin
+insert into stg_json_data select col1 , col2 from stream_josn_data 
+truncate table json_data;
+copy into json_data
+from @s3_ext_stage_json
+purge=True;
+end;
+
+stream on json_data
+
+select $1 from @s3_ext_stage_json
+select * from json_data
+
+SELECT 
+        f0.value:customer.customer_id::int AS customer_id,
+        f0.value:customer.email::varchar AS email,
+        f0.value:customer.name::varchar AS name,
+        f0.value:customer.address::varchar AS address
+    FROM json_data t,
+         LATERAL FLATTEN(input => t.mydata) f0
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY f0.value:order_date::date DESC) = 1
+
+select * from customers
+--customers
+create or replace task t_customers
+warehouse = COMPUTE_WH
+after t_raw_load as 
+MERGE INTO customers AS target
+USING (
+    SELECT 
+        f0.value:customer.customer_id::int AS customer_id,
+        f0.value:customer.email::varchar AS email,
+        f0.value:customer.name::varchar AS name,
+        f0.value:customer.address::varchar AS address
+    FROM json_data t,
+         LATERAL FLATTEN(input => t.mydata) f0
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY f0.value:order_date::date DESC) = 1
+) AS source
+ON target.customer_id = source.customer_id
+WHEN MATCHED THEN 
+    UPDATE SET
+        target.email = source.email,
+        target.name = source.name,
+        target.address = source.address
+WHEN NOT MATCHED THEN
+    INSERT (customer_key,customer_id, email, name, address)
+    VALUES (seq_customer.nextval,source.customer_id, source.email, source.name, source.address);
+
+select * from products
+--products
+create or replace task t_products
+warehouse = COMPUTE_WH
+after t_raw_load as 
+MERGE INTO products AS target
+USING (
+    SELECT 
+        f1.value:product_id::int AS product_id,
+        f1.value:name::varchar AS name,
+        f1.value:category::varchar AS category,
+        f1.value:price::int AS price
+    FROM json_data t,
+         LATERAL FLATTEN(input => t.mydata) f0,
+         LATERAL FLATTEN(input => f0.value:products) f1
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY f1.value:product_id::int ORDER BY f0.value:order_date::date DESC) = 1
+) AS source
+ON target.product_id = source.product_id
+WHEN MATCHED THEN 
+    UPDATE SET
+        target.name = source.name,
+        target.category = source.category,
+        target.price = source.price
+WHEN NOT MATCHED THEN
+    INSERT (product_key, product_id, name, category, price)
+    VALUES (seq_product.nextval, source.product_id, source.name, source.category, source.price);
+
+--orders
+create or replace task t_orders
+warehouse = COMPUTE_WH
+after t_customers,t_products as 
+insert into orders 
+select f0.value:order_id::int as order_id
+,f0.value:order_date::date as order_date
+,c.customer_key
+,p.product_key 
+,f1.value:quantity::int as quantity
+from json_data t,
+lateral flatten (input => t.mydata ) f0
+inner join customers c on f0.value:customer.customer_id::int = c.customer_id,
+lateral flatten (input => f0.value:products) f1
+inner join products p on f1.value:product_id::int=p.product_id;
+
+select * from customers;
+select * from products;
+select * from orders;
+
+select * from orders order by order_id;
+
+truncate table json_data;
+
+
+alter task t_raw_load resume;
+alter task t_products resume;
+alter task t_customers resume;
+alter task t_orders resume;
+
+
+
+----issues -> task run everytime irrespective of we have new data or not
+-- there is no data abckup as we are purging s3 file and data from raw table both 
+
+create table stg_json_data like json_date
+---you can create 3 streams
+create stream orders_stream on table json_data;
+create stream products_stream on table json_data;
+create stream customers_stream on table json_data;
+
+
+create or replace stream stream_json_data on table json_data
+APPEND_ONLY=True
+;
+
+copy into json_data
+from @s3_ext_stage_json
+force=True
+
+select * from stream_json_data
+
+select * from json_data
+create table json_data_stg like json_data
+
+
+create or replace task t_raw_load
+warehouse = COMPUTE_WH
+schedule = '1 minute'
+when  system$stream_has_data('stream_json_data') as
+begin
+truncate table json_data_stg;
+insert into json_data_stg
+select mydata from stream_json_data ;
+end
+
+    alter task t_raw_load resume;
+
+   select * from stream_json_data 
+
+   
+
+
+
+snowpipe -> s3 -> table -> stream->task
+select * from customers;
+select * from products;
+select * from orders order by order_id;
+
+truncate table json_data;
+
+
+select * from table(information_schema.task_history())
+order by scheduled_time desc;
+
+
+
