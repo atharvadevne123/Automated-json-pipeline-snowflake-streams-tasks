@@ -30,29 +30,38 @@ This project demonstrates an **automated, event-driven data pipeline** using **S
 
 ---
 
-## 🗂️ Dataset
+# 📦 Amazon Customer Reviews Dataset Setup
 
+This project uses the **Amazon US Customer Reviews Dataset**, available publicly on Kaggle. The dataset contains millions of product reviews submitted by verified Amazon users across various product categories.
+
+## 📥 How to Download the Dataset from Kaggle
+
+````
+import kagglehub
+
+# Download latest version
+path = kagglehub.dataset_download("cynthiarempel/amazon-us-customer-reviews-dataset")
+
+print("Path to dataset files:", path)
+````
+
+---
 You’ll need to upload sample JSON files (e.g., order transactions) to your Amazon S3 bucket. Files must follow this format:
 
 ```json
 {
-  "order_id": 101,
-  "order_date": "2023-08-01",
-  "customer": {
-    "customer_id": 1,
-    "email": "user@example.com",
-    "name": "John Doe",
-    "address": "123 Main Street"
-  },
-  "products": [
-    {
-      "product_id": 501,
-      "name": "T-Shirt",
-      "category": "Apparel",
-      "price": 25,
-      "quantity": 2
-    }
-  ]
+  "marketplace": "US",
+  "customer_id": "123456",
+  "review_id": "R1XYZ123ABC456",
+  "product_id": "B00EXAMPLE",
+  "product_title": "T-Shirt",
+  "product_category": "Apparel",
+  "star_rating": 5,
+  "review_body": "This t-shirt is amazing! The fabric is soft and fits perfectly.",
+  "review_date": "2023-08-01",
+  "review_headline": "Great quality shirt!",
+  "verified_purchase": "Y",
+  "reviewer_name": "John Doe"
 }
 ```
 
@@ -73,13 +82,13 @@ You’ll need to upload sample JSON files (e.g., order transactions) to your Ama
 
 ```sql
 SELECT 
-  c.name AS customer_name,
-  o.order_date,
-  p.name AS product_name,
-  o.quantity
-FROM NAMASTEMART.DW.ORDERS o
-JOIN NAMASTEMART.DW.CUSTOMERS c ON o.customer_key = c.customer_key
-JOIN NAMASTEMART.DW.PRODUCTS p ON o.product_key = p.product_key;
+  c.customer_name,
+  r.review_date,
+  p.product_title AS product_name,
+  r.star_rating AS rating
+FROM AMAZON_DB.DW.REVIEWS r
+JOIN AMAZON_DB.DW.CUSTOMERS c ON r.customer_id = c.customer_id
+JOIN AMAZON_DB.DW.PRODUCTS p ON r.product_id = p.product_id;
 
 ```
 ## 📌 Highlights
