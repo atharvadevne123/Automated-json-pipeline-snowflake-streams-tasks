@@ -1,4 +1,4 @@
-# 🚀 Snowflake JSON Data Pipeline Project
+# 🚀 Automated Ingestion and Stream-Based ETL for Amazon Review Data Using Snowflake
 
 ## 📘 Project Description
 
