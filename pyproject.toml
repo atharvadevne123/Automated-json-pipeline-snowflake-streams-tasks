@@ -1,20 +1,15 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "snowflake-json-pipeline"
 version = "1.0.0"
-description = "Snowflake JSON ETL pipeline SQL scripts and utilities for Amazon Reviews data"
+description = "Snowflake JSON ETL pipeline SQL scripts and utilities"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [{name = "atharvadevne123", email = "devneatharva@gmail.com"}]
-dependencies = ["snowflake-connector-python>=3.0"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-
-[tool.setuptools.package-data]
-"snowflake_pipeline.sql" = ["*.sql"]
-"snowflake_pipeline.data" = ["*.json"]
