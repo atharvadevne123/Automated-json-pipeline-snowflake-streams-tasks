@@ -63,3 +63,30 @@ def test_summarize_empty_sql():
     result = summarize("")
     assert "Tables" in result
     assert "none" in result
+
+
+def test_summarize_includes_warehouses_count():
+    sql = sp.get_sql()
+    result = summarize(sql)
+    assert "Warehouses" in result
+
+
+def test_summarize_includes_sequences_count():
+    sql = sp.get_sql()
+    result = summarize(sql)
+    assert "Sequences" in result
+
+
+def test_extract_metadata_deduplication():
+    sql = (
+        "CREATE OR REPLACE TABLE db.s.T1 (id INT);\n"
+        "CREATE OR REPLACE TABLE db.s.T1 (id INT);\n"
+    )
+    meta = extract_metadata(sql)
+    assert meta.tables.count("DB.S.T1") == 2  # extractor lists all occurrences
+
+
+def test_extract_metadata_case_insensitive():
+    sql = "create or replace table mydb.myschema.lowercase_table (id int);"
+    meta = extract_metadata(sql)
+    assert any("LOWERCASE_TABLE" in t for t in meta.tables)
