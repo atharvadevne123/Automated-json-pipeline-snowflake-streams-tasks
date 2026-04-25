@@ -1,3 +1,5 @@
+![Docker](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/docker-publish.yml/badge.svg) ![Python Package](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/python-publish.yml/badge.svg) ![Bump Version](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/bump-version.yml/badge.svg)
+
 # 🚀 Automated Ingestion and Stream-Based ETL for Amazon Review Data Using Snowflake
 
 ## 📘 Project Description
