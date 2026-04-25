@@ -13,3 +13,17 @@ authors = [{name = "atharvadevne123", email = "devneatharva@gmail.com"}]
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.setuptools.package-data]
+snowflake_pipeline = ["sql/*.sql", "data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

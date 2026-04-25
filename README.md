@@ -1,4 +1,4 @@
-![Docker](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/docker-publish.yml/badge.svg) ![Python Package](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/python-publish.yml/badge.svg) ![Bump Version](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/bump-version.yml/badge.svg)
+![CI](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/ci.yml/badge.svg) ![Docker](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/docker-publish.yml/badge.svg) ![Python Package](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/python-publish.yml/badge.svg) ![Bump Version](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/bump-version.yml/badge.svg)
 
 # 🚀 Automated Ingestion and Stream-Based ETL for Amazon Review Data Using Snowflake
 
@@ -17,6 +17,10 @@ This project demonstrates an **automated, event-driven data pipeline** using **S
 - **Comprehensive audit logging** for full operational visibility and troubleshooting
 - **Production-ready error handling** with batch logging and recovery procedures
 - **Designed for scalability and low latency** using stream-based change tracking
+- **Python utilities** — `get_sql()`, `list_sql()`, `load_sample_reviews()`, `validate_review()` with path-traversal protection
+- **SQL metadata extractor** — `sql_meta.extract_metadata()` parses tables, streams, tasks, procedures from any DDL script
+- **39-test pytest suite** covering security, correctness, and integration scenarios
+- **GitHub Actions CI** running tests on Python 3.9, 3.11, and 3.12
 
 ---
 
@@ -41,6 +45,62 @@ This project demonstrates an **automated, event-driven data pipeline** using **S
 | **Dimension Tables** | `CUSTOMERS`, `PRODUCTS` - deduplicated using MERGE with SCD Type 1      |
 | **Fact Tables** | `ORDERS`, `REVIEWS` - fully normalized with FK integrity                 |
 | **Warehouse Config** | Auto-suspend after 5 min (90% cost savings), auto-resume on query        |
+
+---
+
+## 🐍 Python Utilities
+
+### Installation
+
+```bash
+pip install -e .
+```
+
+### Usage
+
+```python
+import snowflake_pipeline as sp
+
+# Load bundled SQL script
+sql = sp.get_sql()                        # default: snowflake_optimized.sql
+sql = sp.get_sql("snowflake_optimized.sql")
+
+# List available scripts
+print(sp.list_sql())                      # ['snowflake_optimized.sql']
+
+# Work with sample data
+reviews = sp.load_sample_reviews()       # list[dict]
+errors  = sp.validate_review(reviews[0]) # [] if valid
+
+# Extract DDL metadata
+from snowflake_pipeline.sql_meta import extract_metadata, summarize
+meta = extract_metadata(sql)
+print(meta.tables)   # list of table names
+print(meta.streams)  # list of stream names
+print(summarize(sql))
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in your Snowflake / AWS credentials:
+
+```bash
+cp .env.example .env
+```
+
+## 🧪 Testing
+
+```bash
+pip install pytest pytest-asyncio
+pytest -v
+```
+
+The test suite runs 39 tests covering:
+- `get_sql()` path-traversal security guard
+- `load_sample_reviews()` data validity
+- `validate_review()` field and range checks
+- SQL metadata extraction from real DDL
+- Integration checks on stream / task / MERGE presence
 
 ---
 
