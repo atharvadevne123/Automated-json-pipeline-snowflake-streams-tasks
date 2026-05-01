@@ -4,12 +4,24 @@ from __future__ import annotations
 import json
 import logging
 import pathlib as _pl
+import re
 
 _PKG = _pl.Path(__file__).parent
 _SQL_DIR = _PKG / "sql"
 _DATA_DIR = _PKG / "data"
 
 logger = logging.getLogger(__name__)
+
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+__all__ = [
+    "get_sql",
+    "list_sql",
+    "get_sample_data_path",
+    "load_sample_reviews",
+    "validate_review",
+    "REQUIRED_REVIEW_FIELDS",
+]
 
 
 def get_sql(name: str = "snowflake_optimized.sql") -> str:
@@ -64,6 +76,10 @@ REQUIRED_REVIEW_FIELDS: frozenset[str] = frozenset(
     }
 )
 
+_REQUIRED_STR_FIELDS = frozenset(
+    {"review_id", "customer_id", "product_id", "product_title", "product_category", "review_body"}
+)
+
 
 def validate_review(record: dict) -> list[str]:
     """Return a list of validation error strings for a single review record.
@@ -71,13 +87,27 @@ def validate_review(record: dict) -> list[str]:
     Returns an empty list when the record is valid.
     """
     errors: list[str] = []
+
     missing = REQUIRED_REVIEW_FIELDS - record.keys()
     if missing:
         errors.append(f"Missing fields: {sorted(missing)}")
+
+    for field in _REQUIRED_STR_FIELDS:
+        val = record.get(field)
+        if val is not None and (not isinstance(val, str) or not val.strip()):
+            errors.append(f"{field} must be a non-empty string, got {val!r}")
+
+    date_val = record.get("review_date")
+    if date_val is not None:
+        if not isinstance(date_val, str) or not _DATE_RE.match(date_val):
+            errors.append(f"review_date must be YYYY-MM-DD, got {date_val!r}")
+
     rating = record.get("star_rating")
     if rating is not None and (not isinstance(rating, int) or not 1 <= rating <= 5):
         errors.append(f"star_rating must be an int between 1 and 5, got {rating!r}")
+
     vp = record.get("verified_purchase")
     if vp is not None and vp not in ("Y", "N"):
-        errors.append(f"verified_purchase must be 'Y' or 'N', got {vp!r}")
+        errors.append(f"verified_purchase must be 'Y\'or \'N', got {vp!r}")
+
     return errors
