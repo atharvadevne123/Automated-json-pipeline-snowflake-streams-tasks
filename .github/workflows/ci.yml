@@ -24,11 +24,28 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest pytest-asyncio ruff
+          pip install pytest pytest-asyncio pytest-cov ruff mypy
           pip install -e .
 
       - name: Lint with ruff
         run: ruff check . --select E,F,W,I --ignore E501
 
-      - name: Run tests
-        run: pytest -v --tb=short
+      - name: Type check with mypy
+        run: mypy snowflake_pipeline --ignore-missing-imports --no-error-summary
+        continue-on-error: true
+
+      - name: Run tests with coverage
+        run: |
+          pytest -v --tb=short \
+            --cov=snowflake_pipeline \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=60
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.11'
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 14
