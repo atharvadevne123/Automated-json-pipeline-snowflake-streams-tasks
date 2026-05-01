@@ -51,6 +51,8 @@ def process_batch(
     """
     result = BatchResult(total=len(records))
     t0 = time.monotonic()
+    logger.info("Starting batch processing: %d records, batch_size=%d", len(records), batch_size)
+
     for batch_idx, batch in enumerate(chunk(records, batch_size)):
         logger.debug("Processing batch %d (%d records)", batch_idx, len(batch))
         for rec in batch:
@@ -61,14 +63,18 @@ def process_batch(
                 result.failed += 1
                 msg = f"Record processing error: {exc}"
                 result.errors.append(msg)
-                logger.warning(msg)
+                logger.warning("Batch %d: %s", batch_idx, msg)
                 if stop_on_error:
                     result.duration_s = time.monotonic() - t0
+                    logger.error("Stopping on error after %d failures", result.failed)
                     raise BatchProcessingError(msg, failed_count=result.failed)
+
     result.duration_s = time.monotonic() - t0
     logger.info(
-        "Batch run complete: %d/%d processed in %.2fs",
-        result.processed, result.total, result.duration_s,
+        "Batch run complete: %d/%d processed, %d failed, %.2fs (%.1f rps)",
+        result.processed, result.total, result.failed,
+        result.duration_s,
+        result.processed / result.duration_s if result.duration_s > 0 else 0,
     )
     return result
 
@@ -91,6 +97,7 @@ def process_stream(
     buffer: list[dict] = []
     aggregate = BatchResult()
     t0 = time.monotonic()
+    logger.info("Starting stream processing with batch_size=%d", batch_size)
 
     def flush(buf: list[dict]) -> None:
         r = process_batch(buf, handler, batch_size=len(buf))
@@ -108,4 +115,5 @@ def process_stream(
         flush(buffer)
 
     aggregate.duration_s = time.monotonic() - t0
+    logger.info("Stream processing complete: %d processed in %.2fs", aggregate.processed, aggregate.duration_s)
     return aggregate
