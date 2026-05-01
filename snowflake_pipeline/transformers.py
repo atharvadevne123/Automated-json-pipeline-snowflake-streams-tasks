@@ -10,17 +10,17 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _MULTI_SPACE_RE = re.compile(r"\s+")
-_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 def normalise_text(value: str) -> str:
-    """Normalise a text field: strip, collapse whitespace, remove control chars.
+    """Normalise a text field: strip, collapse whitespace, remove non-printable control chars.
 
     Args:
         value: Raw string value.
 
     Returns:
-        Cleaned string.
+        Cleaned string with whitespace collapsed to single spaces.
     """
     value = unicodedata.normalize("NFC", value)
     value = _CONTROL_CHAR_RE.sub("", value)
@@ -53,7 +53,7 @@ def normalise_review(record: dict) -> dict:
 
 
 def coerce_star_rating(value: Any) -> int | None:
-    """Attempt to coerce *value* to a valid star rating integer.
+    """Attempt to coerce *value* to a valid star rating integer (truncates, does not round).
 
     Args:
         value: Raw star_rating value (int, float, or str).
@@ -71,13 +71,13 @@ def coerce_star_rating(value: Any) -> int | None:
 
 
 def coerce_verified_purchase(value: Any) -> str | None:
-    """Normalise verified_purchase to \'Y\' or \'N\'.
+    """Normalise verified_purchase to 'Y' or 'N'.
 
     Args:
         value: Raw value (e.g. True, "yes", "1", "Y").
 
     Returns:
-        \'Y\', \'N\', or None if unrecognisable.
+        'Y', 'N', or None if unrecognisable.
     """
     if isinstance(value, bool):
         return "Y" if value else "N"
