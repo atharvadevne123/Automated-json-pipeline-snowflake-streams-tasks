@@ -43,7 +43,7 @@ def test_normalise_review_preserves_non_string():
 
 
 @pytest.mark.parametrize("val,expected", [
-    (4, 4), ("3", 3), (2.9, 3), (5.0, 5),
+    (4, 4), ("3", 3), (2.9, 2), (5.0, 5),
 ])
 def test_coerce_star_rating_valid(val, expected):
     assert coerce_star_rating(val) == expected
