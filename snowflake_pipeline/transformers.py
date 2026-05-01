@@ -40,10 +40,15 @@ def normalise_review(record: dict) -> dict:
     text_fields = ("review_id", "customer_id", "product_id", "product_title",
                    "product_category", "review_body", "review_date")
     result = dict(record)
+    changed = 0
     for field in text_fields:
         if isinstance(result.get(field), str):
-            result[field] = normalise_text(result[field])
-    logger.debug("Normalised review %s", result.get("review_id", "<unknown>"))
+            original = result[field]
+            result[field] = normalise_text(original)
+            if result[field] != original:
+                changed += 1
+    if changed:
+        logger.debug("Normalised %d field(s) in review %s", changed, result.get("review_id", "<unknown>"))
     return result
 
 
@@ -61,18 +66,18 @@ def coerce_star_rating(value: Any) -> int | None:
         if 1 <= as_int <= 5:
             return as_int
     except (ValueError, TypeError):
-        pass
+        logger.debug("Could not coerce star_rating %r to int", value)
     return None
 
 
 def coerce_verified_purchase(value: Any) -> str | None:
-    """Normalise verified_purchase to 'Y' or 'N'.
+    """Normalise verified_purchase to \'Y\' or \'N\'.
 
     Args:
         value: Raw value (e.g. True, "yes", "1", "Y").
 
     Returns:
-        'Y', 'N', or None if unrecognisable.
+        \'Y\', \'N\', or None if unrecognisable.
     """
     if isinstance(value, bool):
         return "Y" if value else "N"
@@ -82,6 +87,7 @@ def coerce_verified_purchase(value: Any) -> str | None:
             return "Y"
         if v in ("N", "NO", "FALSE", "0"):
             return "N"
+    logger.debug("Could not coerce verified_purchase %r", value)
     return None
 
 
@@ -99,6 +105,7 @@ def parse_review_date(value: Any) -> date | None:
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:
+        logger.debug("Could not parse review_date %r", value)
         return None
 
 
