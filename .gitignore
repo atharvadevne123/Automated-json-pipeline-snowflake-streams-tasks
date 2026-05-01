@@ -1,14 +1,34 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg
+*.py[cod]
 *.egg-info/
 dist/
 build/
 .eggs/
+*.whl
+
+# Environments
 .env
-.venv/
+.venv
 venv/
+env/
+
+# Test / coverage
 .pytest_cache/
-.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pipeline outputs
+output/
+data/synthetic*.ndjson
