@@ -1,393 +1,242 @@
-![CI](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/ci.yml/badge.svg) ![Docker](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/docker-publish.yml/badge.svg) ![Python Package](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/python-publish.yml/badge.svg) ![Bump Version](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/bump-version.yml/badge.svg)
+# Automated JSON Pipeline — Snowflake Streams & Tasks
 
-# 🚀 Automated Ingestion and Stream-Based ETL for Amazon Review Data Using Snowflake
+[![CI](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/ci.yml/badge.svg)](https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks/actions/workflows/ci.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-## 📘 Project Description
-
-This project demonstrates an **automated, event-driven data pipeline** using **Snowflake**, **Amazon S3**, and **SQL Tasks & Streams** to ingest, transform, and structure semi-structured JSON data into analytics-ready tables. It replicates a near real-time data warehousing scenario by loading customer orders, product information, and transaction data using Snowflake-native orchestration and monitoring features.
-
-### ✅ Key Features:
-- **Optimized JSON ingestion** from an Amazon S3 bucket with stream-based change capture
-- **Cost-efficient automation** - 90% reduction in warehouse costs via auto-suspend and conditional scheduling
-- **Zero-duplicate guarantees** - MERGE-based operations ensure data integrity
-- **Data protection** - 7-day archival retention with automatic backup procedures
-- **Snowflake Streams** to capture incremental changes and trigger tasks only when needed
-- **Snowflake Tasks** with intelligent orchestration for automated data movement and transformation
-- **Flattened JSON parsing** to normalize deeply nested structures
-- **Comprehensive audit logging** for full operational visibility and troubleshooting
-- **Production-ready error handling** with batch logging and recovery procedures
-- **Designed for scalability and low latency** using stream-based change tracking
+A real-time, event-driven data pipeline that ingests JSON from **Amazon S3** into **Snowflake** using Streams and Tasks. Automates transformation into dimension and fact tables with support for incremental loads and analytics-ready insights.
 
 ---
 
-## 🧱 Key Components
+## Features
 
-| Component                  | Description                                                                 |
-|---------------------------|-----------------------------------------------------------------------------|
-| **Amazon S3**             | Source of JSON data files with automatic staging                           |
-| **Snowflake External Stage** | Secure, encrypted reference to the S3 location                            |
-| **Raw Table (`json_data`)**   | Initial landing zone using `VARIANT` column with timestamp tracking        |
-| **Stream (`stream_json_data`)** | CDC (Change Data Capture) - tracks only incremental changes            |
-| **Staging Table (`json_data_stg`)** | Temporary store for batch isolation with automatic cleanup             |
-| **Archive Table (`json_data_archive`)** | 7-day backup retention with audit trail                         |
-| **Audit Tables** | Comprehensive batch logging and stream consumption tracking              |
-| **Tasks** | **Optimized** conditional execution (only runs when data exists)           |
-| ├─ `t_raw_load` | Loads data when stream has data (WHEN clause)                             |
-| ├─ `t_customers` | MERGE operation for deduplication and upsert                            |
-| ├─ `t_products` | MERGE operation for deduplication and upsert                            |
-| ├─ `t_reviews` | NEW - Dedicated review analytics table                                   |
-| ├─ `t_orders` | MERGE operation (instead of INSERT) to prevent duplicates                |
-| └─ `t_cleanup` | Auto-archive and truncate staging with error handling                   |
-| **Dimension Tables** | `CUSTOMERS`, `PRODUCTS` - deduplicated using MERGE with SCD Type 1      |
-| **Fact Tables** | `ORDERS`, `REVIEWS` - fully normalized with FK integrity                 |
-| **Warehouse Config** | Auto-suspend after 5 min (90% cost savings), auto-resume on query        |
+| Feature | Description |
+|---------|-------------|
+| **Event-driven ingestion** | S3 → Snowflake Streams → Tasks pipeline |
+| **Incremental loads** | Change Data Capture via Snowflake Streams |
+| **Auto transformation** | Raw JSON → dimension and fact tables |
+| **Batch processing** | Configurable chunk size with metrics tracking |
+| **Data validation** | Schema validation with detailed error reporting |
+| **Data transformation** | Text normalisation, type coercion, date parsing |
+| **Composable filters** | Star-rating, date-range, category, and verified-purchase filters |
+| **Export utilities** | CSV, JSON array, and NDJSON output |
+| **Retry logic** | Exponential-backoff decorator for transient failures |
+| **Metrics** | Per-run throughput, duration, and validation stats |
+| **Pipeline orchestrator** | `ReviewPipeline` end-to-end ETL class |
+| **CI** | Python 3.9 / 3.11 / 3.12 matrix with coverage and mypy |
 
 ---
 
-# 📦 Amazon Customer Reviews Dataset Setup
+## Quick Start
 
-This project uses the **Amazon US Customer Reviews Dataset**, available publicly on Kaggle. The dataset contains millions of product reviews submitted by verified Amazon users across various product categories.
+### Prerequisites
 
-## 📥 How to Download the Dataset from Kaggle
+- Python 3.9+
+- Snowflake account
+- AWS S3 bucket (for production; tests run without it)
 
-````
-import kagglehub
+### Installation
 
-# Download latest version
-path = kagglehub.dataset_download("cynthiarempel/amazon-us-customer-reviews-dataset")
-
-print("Path to dataset files:", path)
-````
-
----
-You'll need to upload sample JSON files (e.g., order transactions) to your Amazon S3 bucket. Files must follow this format:
-
-```json
-{
-  "marketplace": "US",
-  "customer_id": "123456",
-  "review_id": "R1XYZ123ABC456",
-  "product_id": "B00EXAMPLE",
-  "product_title": "T-Shirt",
-  "product_category": "Apparel",
-  "star_rating": 5,
-  "review_body": "This t-shirt is amazing! The fabric is soft and fits perfectly.",
-  "review_date": "2023-08-01",
-  "review_headline": "Great quality shirt!",
-  "verified_purchase": "Y",
-  "reviewer_name": "John Doe"
-}
-```
-
-
-## ⚙️ Optimized Project Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Upload JSON files to Amazon S3 bucket                    │
-└──────────────────────┬──────────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 2. External Stage references S3 (secure, encrypted)         │
-└──────────────────────┬──────────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 3. COPY INTO json_data from external stage                  │
-└──────────────────────┬──────────────────────────────────────┘
-                       ↓
-┌─────────────────────────────────────────────────────────────┐
-│ 4. Stream (CDC) captures ONLY incremental changes           │
-│    ✅ No unnecessary processing                             │
-└──────────────────────┬──────────────────────────────────────┘
-                       ↓
-        ┌──────────────┴──────────────┐
-        ↓ IF DATA EXISTS ↓ NO DATA EXISTS
-        │                │
-        ↓                ↓ SKIP TASK
-┌──────────────────┐   (WAREHOUSE SUSPENDED)
-│ t_raw_load runs  │
-│ (Conditional!)   │
-└────────┬─────────┘
-         ↓
-    ┌──────────────────────────────────┐
-    │ Data → json_data_stg (staging)   │
-    │ Log consumption in audit table   │
-    └────────┬─────────────────────────┘
-             ↓
-    ┌────────────────────────────────────────┐
-    │ Parallel Tasks (AFTER t_raw_load):    │
-    │ ├─ t_customers (MERGE for upsert)     │
-    │ ├─ t_products (MERGE for upsert)      │
-    │ └─ t_reviews (NEW - dedicated table)  │
-    └────────┬─────────────────────────────┘
-             ↓
-    ┌────────────────────────────────────────┐
-    │ t_orders (MERGE instead of INSERT)    │
-    │ Prevents duplicate orders             │
-    └────────┬─────────────────────────────┘
-             ↓
-    ┌────────────────────────────────────────┐
-    │ t_cleanup (automatic):                │
-    │ ├─ Archive json_data (7-day backup)   │
-    │ ├─ Truncate staging table             │
-    │ └─ Log batch completion               │
-    └────────┬─────────────────────────────┘
-             ↓
-    ┌────────────────────────────────────────┐
-    │ ✅ Warehouse Auto-Suspends             │
-    │    (After 5 min of inactivity)        │
-    │    💰 Saves 90% of costs              │
-    └────────────────────────────────────────┘
-             ↓
-    ┌────────────────────────────────────────┐
-    │ 📊 Final Result:                       │
-    │ ├─ CUSTOMERS (deduplicated)            │
-    │ ├─ PRODUCTS (deduplicated)             │
-    │ ├─ ORDERS (no duplicates)              │
-    │ ├─ REVIEWS (new - analytics ready)    │
-    │ └─ Ready for querying in AMAZON_DB.DW │
-    └────────────────────────────────────────┘
-```
-
-### Key Optimizations:
-- ✅ **Conditional execution** - Tasks only run when stream has data
-- ✅ **MERGE operations** - Zero duplicates in all tables
-- ✅ **Automatic archival** - 7-day backup before purge
-- ✅ **Auto-suspend** - Warehouse suspends after 5 min (90% cost savings)
-- ✅ **Error handling** - Comprehensive batch logging and recovery
-- ✅ **Stream consumption tracking** - Full visibility into processing
-
----
-
-## 🧩 Sample Queries
-
-### Top Reviewed Products with Analytics
-```sql
-SELECT
-  p.name,
-  p.category,
-  COUNT(r.review_id) as review_count,
-  AVG(r.star_rating) as avg_rating,
-  SUM(CASE WHEN r.helpful_votes > 10 THEN 1 ELSE 0 END) as helpful_reviews,
-  COUNT(CASE WHEN r.verified_purchase = 'Y' THEN 1 END) as verified_purchases
-FROM AMAZON_DB.DW.REVIEWS r
-JOIN AMAZON_DB.DW.PRODUCTS p ON r.product_key = p.product_key
-WHERE r.review_date >= CURRENT_DATE - 30
-GROUP BY p.product_key, p.name, p.category
-ORDER BY review_count DESC
-LIMIT 10;
-```
-
-### Customer Purchase History with Reviews
-```sql
-SELECT
-  c.name as customer_name,
-  p.name as product_name,
-  o.order_date,
-  r.star_rating,
-  r.review_body,
-  r.helpful_votes
-FROM AMAZON_DB.DW.ORDERS o
-JOIN AMAZON_DB.DW.CUSTOMERS c ON o.customer_key = c.customer_key
-JOIN AMAZON_DB.DW.PRODUCTS p ON o.product_key = p.product_key
-LEFT JOIN AMAZON_DB.DW.REVIEWS r ON o.order_id = r.order_id
-ORDER BY c.name, o.order_date DESC;
-```
-
-### Monitor Pipeline Health
-```sql
--- Check task execution history
-SELECT 
-  TASK_NAME,
-  STATE,
-  LAST_COMPLETED_TIME,
-  NEXT_SCHEDULED_TIME
-FROM INFORMATION_SCHEMA.TASKS
-WHERE TASK_SCHEMA = 'DW'
-ORDER BY TASK_NAME;
-
--- Check batch processing log
-SELECT * FROM AMAZON_DB.AUDIT.batch_log
-ORDER BY batch_timestamp DESC
-LIMIT 20;
-
--- Check stream consumption
-SELECT * FROM AMAZON_DB.AUDIT.stream_consumption_log
-ORDER BY created_at DESC
-LIMIT 10;
-```
-
-## 📌 Highlights & Optimizations
-
-### Performance & Cost
-- ⚡ **90% cost reduction** - Auto-suspend warehouse after 5 minutes
-- 🚀 **10x faster queries** - Dedicated REVIEWS table with optimized schema
-- 💾 **99% compute reduction** - Conditional task scheduling (only run when needed)
-- 📈 **4x faster task execution** - Stream-aware scheduling instead of fixed intervals
-
-### Data Quality & Integrity
-- 🔄 **Zero duplicates** - MERGE operations on all dimension/fact tables
-- 🛡️ **Data protection** - 7-day archival retention with automatic backup
-- 📊 **Complete audit trail** - Batch logging and stream consumption tracking
-- 🔗 **FK integrity** - Foreign key constraints prevent orphaned records
-
-### Production Readiness
-- 🔧 **Error handling** - Try-catch blocks with batch logging
-- 📢 **Monitoring** - Built-in audit tables and diagnostic queries
-- ♻️ **Idempotent operations** - Safe to re-run tasks without data corruption
-- 📋 **Recovery procedures** - Archive tables and time-travel capability
-
-### Real-time Processing
-- ⚡ **Stream-based CDC** using `SYSTEM$STREAM_HAS_DATA()`
-- 🔁 **Multi-step task chaining** using `AFTER` dependencies for orchestration
-- 🔄 **Dynamic and incremental updates** using `MERGE` for upserts
-- 🔧 **Extensible architecture** - Easy to add new tables or modify transformations
-
-
----
-
-## 📚 Documentation & Implementation Files
-
-### Available Resources:
-
-1. **`snowflake_optimized.sql`** ⭐
-   - Production-ready SQL implementation with all optimizations
-   - 775 lines of well-documented code
-   - Includes procedures, tasks, streams, and monitoring queries
-   - **Ready to deploy** to your Snowflake environment
-
-2. **`MIGRATION_GUIDE.md`** 🚀
-   - Step-by-step migration from original to optimized version
-   - **5 Phases**: Preparation → Implementation → Validation → Testing → Cutover
-   - Includes rollback procedures for safety
-   - Data migration scripts and validation checklist
-   - Monitoring instructions for 24-hour validation period
-
-3. **`OPTIMIZATION_DETAILS.md`** 📊
-   - Comprehensive technical deep-dive
-   - Explains each of the 7 major optimizations
-   - Before/after comparisons with metrics
-   - Cost analysis ($34,450/year savings)
-   - Performance improvements (10x faster queries)
-   - Troubleshooting guide and FAQ
-
----
-
-## 🚀 Quick Start
-
-### Option 1: Deploy Optimized Version (Recommended)
 ```bash
-# 1. Review the optimized SQL
-cat snowflake_optimized.sql
+git clone https://github.com/atharvadevne123/Automated-json-pipeline-snowflake-streams-tasks
+cd Automated-json-pipeline-snowflake-streams-tasks
 
-# 2. Follow the migration guide
-cat MIGRATION_GUIDE.md
+# Install the package and dev dependencies
+pip install -e ".[dev]"
 
-# 3. Execute the SQL in your Snowflake warehouse
-# (in phases as described in MIGRATION_GUIDE.md)
+# Copy and fill in environment variables
+cp .env.example .env
 ```
 
-### Option 2: Understand the Changes
+### Configuration
+
+Set the following environment variables (or populate `.env`):
+
 ```bash
-# 1. Read the optimization details
-cat OPTIMIZATION_DETAILS.md
+SNOWFLAKE_ACCOUNT=your_account
+SNOWFLAKE_USER=your_user
+SNOWFLAKE_PASSWORD=your_password
+SNOWFLAKE_DATABASE=your_db
+SNOWFLAKE_SCHEMA=your_schema
+SNOWFLAKE_WAREHOUSE=your_wh
+SNOWFLAKE_ROLE=your_role        # optional
+LOG_LEVEL=INFO
+PIPELINE_BATCH_SIZE=100
+```
 
-# 2. Compare with original snowflake.txt
-diff snowflake.txt snowflake_optimized.sql
+### Apply the Snowflake DDL
 
-# 3. Review MIGRATION_GUIDE.md for implementation steps
+```bash
+# Review and run the DDL script in your Snowflake worksheet
+cat snowflake_pipeline/sql/snowflake_optimized.sql
+```
+
+### Use the Python API
+
+```python
+import snowflake_pipeline as sp
+
+# Load and inspect bundled SQL
+sql = sp.get_sql()
+print(sql[:200])
+
+# Load and validate sample data
+records = sp.load_sample_reviews()
+for rec in records:
+    errors = sp.validate_review(rec)
+    if errors:
+        print(f"Invalid: {errors}")
+
+# End-to-end pipeline run
+from pathlib import Path
+from snowflake_pipeline.pipeline import ReviewPipeline
+from snowflake_pipeline.filters import by_star_rating
+
+pipeline = ReviewPipeline()
+result = pipeline.run(
+    source=Path("data/reviews.ndjson"),
+    destination=Path("output/valid_reviews.ndjson"),
+    filters=[by_star_rating(4, 5)],
+)
+print(f"Processed {result.processed}/{result.total} records in {result.duration_s:.2f}s")
 ```
 
 ---
 
-## 💡 Key Improvements Summary
-
-| Feature | Before | After | Impact |
-|---------|--------|-------|--------|
-| **Warehouse Cost/Month** | $2,880 | $9 | 💰 99.7% reduction |
-| **Annual Cost** | $34,560 | $110 | 💰 $34,450 savings |
-| **Task Efficiency** | Every minute (wasteful) | Only when needed | ⚡ 99% reduction |
-| **Duplicate Records** | Yes (data quality issue) | No (MERGE-based) | 🟢 100% elimination |
-| **Data Loss Risk** | High (immediate purge) | Low (7-day archive) | 🛡️ Protected |
-| **Query Speed** | 5 seconds | 500ms | 🚀 10x faster |
-| **Error Handling** | None | Comprehensive logging | 📊 Production-ready |
-| **Monitoring** | Manual queries | Automated audit tables | 📈 Full visibility |
-
----
-
-## 🔍 File Structure
+## Project Structure
 
 ```
-Automated-json-pipeline-snowflake-streams-tasks/
-├── README.md                          # This file (updated)
-├── snowflake.txt                      # Original implementation (reference)
-├── snowflake_optimized.sql            # ⭐ OPTIMIZED - PRODUCTION READY
-├── MIGRATION_GUIDE.md                 # 🚀 Step-by-step implementation guide
-├── OPTIMIZATION_DETAILS.md            # 📊 Comprehensive technical analysis
-├── sample_amazon_reviews.json         # Sample data for testing
-├── snowflake_json_pipeline_vertical.png  # Architecture diagram
-└── LICENSE
-```
-
----
-
-## 🎯 Implementation Checklist
-
-- [ ] Review `snowflake_optimized.sql`
-- [ ] Read `MIGRATION_GUIDE.md` Phase 1 (Preparation)
-- [ ] Backup existing data
-- [ ] Suspend existing tasks
-- [ ] Execute Phase 2 (Implementation) from migration guide
-- [ ] Run Phase 3 (Validation) tests
-- [ ] Load sample data in Phase 4
-- [ ] Verify tasks execute correctly
-- [ ] Monitor for 24 hours (Phase 5)
-- [ ] Update application connection strings
-- [ ] Archive old tasks
-
----
-
-## 📞 Support & Troubleshooting
-
-For detailed troubleshooting:
-1. Check **OPTIMIZATION_DETAILS.md** → Troubleshooting section
-2. Review **MIGRATION_GUIDE.md** → Troubleshooting section
-3. Run monitoring queries from `snowflake_optimized.sql` (Section 11)
-4. Check `AMAZON_DB.AUDIT.batch_log` for error details
-
----
-
-## 📈 Performance Monitoring
-
-```sql
--- Monitor task health (add to your dashboards)
-SELECT * FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY())
-ORDER BY SCHEDULED_TIME DESC
-LIMIT 20;
-
--- Check data quality
-SELECT COUNT(*) as total_customers FROM AMAZON_DB.DW.CUSTOMERS;
-SELECT COUNT(*) as total_products FROM AMAZON_DB.DW.PRODUCTS;
-SELECT COUNT(*) as total_orders FROM AMAZON_DB.DW.ORDERS;
-SELECT COUNT(*) as total_reviews FROM AMAZON_DB.DW.REVIEWS;
-
--- Monitor warehouse usage
-SHOW WAREHOUSES;
-
--- Check audit logs
-SELECT * FROM AMAZON_DB.AUDIT.batch_log ORDER BY batch_timestamp DESC;
+.
+├── snowflake_pipeline/
+│   ├── __init__.py          # Core API: get_sql, load_sample_reviews, validate_review
+│   ├── sql_meta.py          # DDL metadata extractor
+│   ├── pipeline.py          # ReviewPipeline orchestrator
+│   ├── validators.py        # Batch-aware record validators
+│   ├── transformers.py      # Text normalisation & type coercion
+│   ├── filters.py           # Composable record filter predicates
+│   ├── batch_processor.py   # Chunked processing with BatchResult
+│   ├── metrics.py           # PipelineMetrics with JSON export
+│   ├── retry.py             # Exponential-backoff @retry decorator
+│   ├── io.py                # NDJSON streaming reader/writer
+│   ├── export.py            # CSV / JSON / NDJSON export utilities
+│   ├── config.py            # PipelineConfig / SnowflakeConfig
+│   ├── constants.py         # Shared named constants
+│   ├── exceptions.py        # Typed exception hierarchy
+│   ├── sql/                 # Bundled SQL scripts
+│   └── data/                # Bundled sample data
+├── tests/                   # 15 test files, 100+ tests
+├── scripts/                 # CLI tools (validate_data, seed_data, generate_report)
+├── .github/workflows/       # CI (lint + type-check + coverage)
+├── Dockerfile
+├── docker-compose.yml
+└── Makefile
 ```
 
 ---
 
-## 👨‍💻 Author
+## API Reference
 
-**Atharva Devne**  
+### Core (`snowflake_pipeline`)
 
-### Optimization & Enhancement
-**Optimized Version** - V1.0 (April 2026)
-- Stream-aware task scheduling
-- MERGE-based deduplication
-- Comprehensive audit logging
-- 90% cost reduction
-- Production-ready error handling
+| Function | Description |
+|----------|-------------|
+| `get_sql(name?)` | Return bundled SQL script text (path-traversal safe) |
+| `list_sql()` | List all bundled SQL script names |
+| `get_sample_data_path()` | Return path to bundled NDJSON sample data |
+| `load_sample_reviews()` | Parse and return all sample review records |
+| `validate_review(record)` | Validate one record; return list of error strings |
+
+### Validators (`snowflake_pipeline.validators`)
+
+```python
+from snowflake_pipeline.validators import validate_record, assert_valid, validate_batch
+
+errors = validate_record(record)           # returns list[str]
+assert_valid(record)                       # raises ValidationError if invalid
+valid, invalid = validate_batch(records)  # partition into valid / invalid
+```
+
+### Filters (`snowflake_pipeline.filters`)
+
+```python
+from snowflake_pipeline.filters import apply_filters, by_star_rating, by_verified_purchase, by_date_range
+
+result = apply_filters(records, by_star_rating(4, 5), by_verified_purchase(True))
+```
+
+### Export (`snowflake_pipeline.export`)
+
+```python
+from snowflake_pipeline.export import to_csv, to_json, to_ndjson
+
+to_csv(records, Path("output.csv"))
+to_json(records, Path("output.json"))
+to_ndjson(records, Path("output.ndjson"))
+```
+
+### Pipeline (`snowflake_pipeline.pipeline`)
+
+```python
+from snowflake_pipeline.pipeline import ReviewPipeline
+
+pipeline = ReviewPipeline()
+result = pipeline.run(source=Path("in.ndjson"), destination=Path("out.ndjson"))
+print(pipeline.metrics.to_json())
+```
+
+---
+
+## Testing
+
+```bash
+make test           # run all tests
+make test-cov       # run with coverage report
+pytest tests/test_validators.py -v   # run a specific module
+```
+
+The test suite covers:
+- Unit tests for every module
+- Parametrized edge cases for validators, transformers, filters
+- Integration tests for full ETL cycle
+- Security tests (path traversal guards)
+
+---
+
+## Docker
+
+```bash
+# Build
+make docker-build
+
+# Run with docker-compose (requires .env)
+docker-compose up pipeline
+
+# Run tests in Docker
+docker-compose run --rm test-runner
+```
+
+---
+
+## CLI Tools
+
+```bash
+# Validate an NDJSON file
+python scripts/validate_data.py data/reviews.ndjson --strict
+
+# Generate synthetic test data
+python scripts/seed_data.py output/synthetic.ndjson -n 1000 --seed 42
+
+# Generate a run report from metrics JSON
+python scripts/generate_report.py output/metrics.json
+```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). All PRs require passing CI (lint + tests).
+
+## License
+
+[MIT](LICENSE)
