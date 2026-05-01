@@ -38,12 +38,14 @@ class PipelineMetrics:
         return self.processed_records / d if d > 0 else 0.0
 
     def mark_complete(self) -> None:
-        """Record the end timestamp."""
+        """Record the end timestamp and emit a summary log line."""
         self.end_time = time.time()
         logger.info(
-            "Pipeline run %s complete: %d/%d records in %.2fs (%.1f rps)",
+            "Run %s complete: %d/%d records processed in %.2fs (%.1f rps) — "
+            "%d valid, %d invalid, %d failed",
             self.run_id, self.processed_records, self.total_records,
             self.duration_s, self.throughput_rps,
+            self.valid_records, self.invalid_records, self.failed_records,
         )
 
     def record_validation(self, valid: int, invalid: int, errors: list[str] | None = None) -> None:
@@ -58,6 +60,11 @@ class PipelineMetrics:
         self.invalid_records += invalid
         if errors:
             self.validation_errors.extend(errors)
+        logger.debug(
+            "Run %s — validation update: +%d valid, +%d invalid (total: %d/%d)",
+            self.run_id, valid, invalid,
+            self.valid_records + self.invalid_records, self.total_records,
+        )
 
     def to_dict(self) -> dict:
         """Serialise metrics to a plain dict."""
@@ -84,4 +91,4 @@ class PipelineMetrics:
             path: Destination file path (parent must exist).
         """
         path.write_text(self.to_json(), encoding="utf-8")
-        logger.debug("Metrics saved to %s", path)
+        logger.info("Run %s metrics saved to %s", self.run_id, path)
