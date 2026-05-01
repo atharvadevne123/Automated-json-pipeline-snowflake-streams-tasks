@@ -72,22 +72,35 @@ def validate_record(record: dict) -> list[str]:
     missing = REQUIRED_FIELDS - record.keys()
     if missing:
         errors.append(f"Missing fields: {sorted(missing)}")
+        logger.debug("Record missing fields: %s", sorted(missing))
 
     for field_name in _STRING_FIELDS:
         if field_name in record:
-            errors.extend(_check_non_empty_str(record[field_name], field_name))
+            errs = _check_non_empty_str(record[field_name], field_name)
+            if errs:
+                logger.debug("Field %s failed non-empty check: %s", field_name, errs)
+            errors.extend(errs)
 
     if "review_date" in record:
-        errors.extend(_check_date_format(record["review_date"], "review_date"))
+        errs = _check_date_format(record["review_date"], "review_date")
+        if errs:
+            logger.debug("review_date format invalid: %r", record["review_date"])
+        errors.extend(errs)
 
     if "star_rating" in record:
-        errors.extend(_check_star_rating(record["star_rating"]))
+        errs = _check_star_rating(record["star_rating"])
+        if errs:
+            logger.debug("star_rating invalid: %r", record["star_rating"])
+        errors.extend(errs)
 
     if "verified_purchase" in record:
-        errors.extend(_check_verified_purchase(record["verified_purchase"]))
+        errs = _check_verified_purchase(record["verified_purchase"])
+        if errs:
+            logger.debug("verified_purchase invalid: %r", record["verified_purchase"])
+        errors.extend(errs)
 
     if errors:
-        logger.debug("Record validation failed with %d error(s)", len(errors))
+        logger.info("Record %r failed validation with %d error(s)", record.get("review_id", "?"), len(errors))
     return errors
 
 
@@ -122,5 +135,8 @@ def validate_batch(records: list[dict]) -> tuple[list[dict], list[tuple[dict, li
             invalid.append((rec, errs))
         else:
             valid.append(rec)
-    logger.info("Batch validated: %d valid, %d invalid out of %d", len(valid), len(invalid), len(records))
+    logger.info(
+        "Batch validated: %d valid, %d invalid out of %d total",
+        len(valid), len(invalid), len(records),
+    )
     return valid, invalid
