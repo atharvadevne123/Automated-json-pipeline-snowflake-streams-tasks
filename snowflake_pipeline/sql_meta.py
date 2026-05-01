@@ -74,12 +74,13 @@ def summarize(sql: str) -> str:
         Multi-line string with counts and names per object type.
     """
     m = extract_metadata(sql)
+    sep = ", "
     lines = [
-        f"Tables     : {len(m.tables)}  -> {\', \'.join(m.tables) or \'none\'}",
-        f"Streams    : {len(m.streams)}  -> {\', \'.join(m.streams) or \'none\'}",
-        f"Tasks      : {len(m.tasks)}  -> {\', \'.join(m.tasks) or \'none\'}",
-        f"Procedures : {len(m.procedures)}  -> {\', \'.join(m.procedures) or \'none\'}",
-        f"Warehouses : {len(m.warehouses)}  -> {\', \'.join(m.warehouses) or \'none\'}",
-        f"Sequences  : {len(m.sequences)}  -> {\', \'.join(m.sequences) or \'none\'}",
+        "Tables     : {}  -> {}".format(len(m.tables), sep.join(m.tables) or "none"),
+        "Streams    : {}  -> {}".format(len(m.streams), sep.join(m.streams) or "none"),
+        "Tasks      : {}  -> {}".format(len(m.tasks), sep.join(m.tasks) or "none"),
+        "Procedures : {}  -> {}".format(len(m.procedures), sep.join(m.procedures) or "none"),
+        "Warehouses : {}  -> {}".format(len(m.warehouses), sep.join(m.warehouses) or "none"),
+        "Sequences  : {}  -> {}".format(len(m.sequences), sep.join(m.sequences) or "none"),
     ]
     return "\n".join(lines)
