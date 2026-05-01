@@ -123,7 +123,7 @@ def test_load_sample_reviews_verified_purchase_values():
 
 
 # ---------------------------------------------------------------------------
-# validate_review
+# validate_review — parametrized edge cases
 # ---------------------------------------------------------------------------
 
 def _valid_review() -> dict:
@@ -151,32 +151,28 @@ def test_validate_review_missing_field():
     assert any("review_id" in e for e in errors)
 
 
-def test_validate_review_bad_star_rating_zero():
-    rec = _valid_review()
-    rec["star_rating"] = 0
-    errors = sp.validate_review(rec)
-    assert any("star_rating" in e for e in errors)
+@pytest.mark.parametrize("star", [0, 6, -1, 100])
+def test_validate_review_bad_star_rating(star):
+    rec = {**_valid_review(), "star_rating": star}
+    assert any("star_rating" in e for e in sp.validate_review(rec))
 
 
-def test_validate_review_bad_star_rating_six():
-    rec = _valid_review()
-    rec["star_rating"] = 6
-    errors = sp.validate_review(rec)
-    assert any("star_rating" in e for e in errors)
+@pytest.mark.parametrize("vp", ["X", "y", "n", "", "YES", "true"])
+def test_validate_review_bad_verified_purchase(vp):
+    rec = {**_valid_review(), "verified_purchase": vp}
+    assert any("verified_purchase" in e for e in sp.validate_review(rec))
 
 
-def test_validate_review_bad_star_rating_string():
-    rec = _valid_review()
-    rec["star_rating"] = "five"
-    errors = sp.validate_review(rec)
-    assert any("star_rating" in e for e in errors)
+@pytest.mark.parametrize("date_val", ["01-01-2023", "2023/01/01", "not-a-date", "20230101"])
+def test_validate_review_bad_date_format(date_val):
+    rec = {**_valid_review(), "review_date": date_val}
+    assert any("review_date" in e for e in sp.validate_review(rec))
 
 
-def test_validate_review_bad_verified_purchase():
-    rec = _valid_review()
-    rec["verified_purchase"] = "X"
-    errors = sp.validate_review(rec)
-    assert any("verified_purchase" in e for e in errors)
+@pytest.mark.parametrize("field_name", ["review_id", "customer_id", "product_id"])
+def test_validate_review_empty_string_required_field(field_name):
+    rec = {**_valid_review(), field_name: ""}
+    assert any(field_name in e for e in sp.validate_review(rec))
 
 
 def test_validate_review_all_sample_records_valid():
@@ -208,3 +204,37 @@ def test_sql_contains_merge_statements():
 def test_sql_contains_warehouse_config():
     content = sp.get_sql()
     assert "WAREHOUSE" in content.upper()
+
+
+# ---------------------------------------------------------------------------
+# Additional edge cases
+# ---------------------------------------------------------------------------
+
+def test_validate_review_returns_list_type():
+    result = sp.validate_review(_valid_review())
+    assert isinstance(result, list)
+
+
+def test_validate_review_star_rating_string_type():
+    rec = {**_valid_review(), "star_rating": "five"}
+    errors = sp.validate_review(rec)
+    assert any("star_rating" in e for e in errors)
+
+
+def test_get_sql_name_with_null_byte_raises():
+    with pytest.raises((ValueError, FileNotFoundError, OSError)):
+        sp.get_sql("\x00evil.sql")
+
+
+def test_load_sample_reviews_have_all_required_fields():
+    required = {
+        "review_id", "review_date", "customer_id", "product_id",
+        "product_title", "product_category", "star_rating",
+        "review_body", "verified_purchase",
+    }
+    for rec in sp.load_sample_reviews():
+        assert required.issubset(rec.keys())
+
+
+def test_list_sql_returns_at_least_one():
+    assert len(sp.list_sql()) >= 1
