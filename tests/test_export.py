@@ -7,8 +7,8 @@ import pathlib
 
 import pytest
 
-from snowflake_pipeline.export import to_csv, to_json, to_ndjson
 from snowflake_pipeline.exceptions import ExportError
+from snowflake_pipeline.export import to_csv, to_json, to_ndjson
 
 
 def _review(idx: int = 1) -> dict:
@@ -47,7 +47,7 @@ def test_to_ndjson_roundtrip(tmp_path):
     records = [_review(i) for i in range(3)]
     count = to_ndjson(records, p)
     assert count == 3
-    lines = [l for l in p.read_text().splitlines() if l]
+    lines = [line for line in p.read_text().splitlines() if line]
     assert len(lines) == 3
     assert json.loads(lines[0])["review_id"] == "R000"
 

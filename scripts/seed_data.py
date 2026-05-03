@@ -10,7 +10,6 @@ import string
 import sys
 from datetime import date, timedelta
 
-
 _CATEGORIES = ["Electronics", "Books", "Sports", "Home & Garden", "Clothing", "Toys", "Food"]
 _TITLES = [
     "Super Widget Pro", "Basic Gizmo", "Deluxe Gadget", "Premium Device",

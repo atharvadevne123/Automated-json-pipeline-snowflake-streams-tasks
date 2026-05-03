@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import sys
 
@@ -16,8 +15,8 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        from snowflake_pipeline.validators import validate_batch
         from snowflake_pipeline.io import read_ndjson
+        from snowflake_pipeline.validators import validate_batch
     except ImportError:
         print("ERROR: snowflake_pipeline package not installed.", file=sys.stderr)
         sys.exit(2)

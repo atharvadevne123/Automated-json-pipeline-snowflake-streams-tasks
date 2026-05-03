@@ -4,9 +4,7 @@ from __future__ import annotations
 import json
 import pathlib
 
-import pytest
-
-from snowflake_pipeline.filters import by_star_rating, by_verified_purchase
+from snowflake_pipeline.filters import by_star_rating
 from snowflake_pipeline.pipeline import ReviewPipeline
 
 
@@ -47,8 +45,8 @@ def test_pipeline_run_invalid_records_excluded(tmp_path):
     dst = tmp_path / "out.ndjson"
     _write_ndjson(src, [_review(1), {"review_id": "bad"}])
     pipeline = ReviewPipeline()
-    result = pipeline.run(src, dst)
-    lines = [l for l in dst.read_text().splitlines() if l]
+    pipeline.run(src, dst)
+    lines = [line for line in dst.read_text().splitlines() if line]
     assert len(lines) == 1
 
 
@@ -58,7 +56,7 @@ def test_pipeline_run_with_filter(tmp_path):
     _write_ndjson(src, [_review(1, star_rating=5), _review(2, star_rating=2)])
     pipeline = ReviewPipeline()
     pipeline.run(src, dst, filters=[by_star_rating(4)])
-    lines = [l for l in dst.read_text().splitlines() if l]
+    lines = [line for line in dst.read_text().splitlines() if line]
     assert len(lines) == 1
     assert json.loads(lines[0])["star_rating"] == 5
 

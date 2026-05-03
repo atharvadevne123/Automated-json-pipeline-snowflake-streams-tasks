@@ -15,7 +15,7 @@ def test_seed_data_generates_records(tmp_path: pathlib.Path):
     )
     assert result.returncode == 0, result.stderr
     assert out.exists()
-    lines = [l for l in out.read_text().splitlines() if l]
+    lines = [line for line in out.read_text().splitlines() if line]
     assert len(lines) == 10
 
 
