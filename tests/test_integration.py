@@ -1,10 +1,7 @@
 """End-to-end integration tests for the snowflake_pipeline package."""
 from __future__ import annotations
 
-import json
 import pathlib
-
-import pytest
 
 import snowflake_pipeline as sp
 from snowflake_pipeline.batch_processor import process_batch

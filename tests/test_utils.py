@@ -17,7 +17,6 @@ from snowflake_pipeline.utils import (
 
 
 def test_utcnow_is_timezone_aware():
-    from datetime import timezone
     dt = utcnow()
     assert dt.tzinfo is not None
     assert dt.utcoffset().total_seconds() == 0

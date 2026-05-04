@@ -5,8 +5,6 @@ import json
 import pathlib
 import time
 
-import pytest
-
 from snowflake_pipeline.metrics import PipelineMetrics
 
 
