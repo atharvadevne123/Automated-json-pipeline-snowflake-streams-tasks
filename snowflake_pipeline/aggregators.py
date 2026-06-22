@@ -14,6 +14,7 @@ __all__ = [
     "group_by",
     "count_by",
     "rating_histogram",
+    "field_stats",
 ]
 
 
@@ -130,3 +131,27 @@ def rating_histogram(records: list[dict]) -> dict[int, int]:
             hist[rating] += 1
     logger.debug("Built rating histogram from %d records", len(records))
     return hist
+
+
+def field_stats(records: list[dict], field: str) -> dict:
+    """Compute basic statistics for a numeric field across all records.
+
+    Args:
+        records: List of review dicts.
+        field: Name of the numeric field to analyse.
+
+    Returns:
+        Dict with count, min, max, mean, and non-null count.
+    """
+    values = [r[field] for r in records if field in r and isinstance(r[field], (int, float))]
+    if not values:
+        return {"count": 0, "non_null": 0, "min": None, "max": None, "mean": None}
+    result = {
+        "count": len(records),
+        "non_null": len(values),
+        "min": min(values),
+        "max": max(values),
+        "mean": round(sum(values) / len(values), 6),
+    }
+    logger.debug("field_stats for %r: %s", field, result)
+    return result
