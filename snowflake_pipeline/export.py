@@ -16,6 +16,7 @@ __all__ = [
     "to_csv",
     "to_json",
     "to_ndjson",
+    "export_summary",
 ]
 
 _REVIEW_CSV_FIELDS = (
@@ -97,4 +98,36 @@ def to_ndjson(records: list[dict], path: Path) -> int:
     except OSError as exc:
         raise ExportError(f"Cannot write NDJSON to {path}: {exc}") from exc
     logger.info("Exported %d records (NDJSON) to %s", len(records), path)
+    return len(records)
+
+
+def export_summary(records: list[dict], path: Path) -> int:
+    """Write a JSON summary of record statistics to *path*.
+
+    Args:
+        records: List of review dicts to summarise.
+        path: Destination .json file path.
+
+    Returns:
+        Number of records summarised.
+
+    Raises:
+        ExportError: on I/O errors.
+    """
+    from snowflake_pipeline.aggregators import summarise_reviews
+    summary = summarise_reviews(records)
+    data = {
+        "total": summary.total,
+        "avg_star_rating": round(summary.avg_star_rating, 4),
+        "star_distribution": summary.star_distribution,
+        "category_counts": summary.category_counts,
+        "verified_count": summary.verified_count,
+        "unverified_count": summary.unverified_count,
+        "verified_rate": round(summary.verified_rate, 4),
+    }
+    try:
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError as exc:
+        raise ExportError(f"Cannot write summary to {path}: {exc}") from exc
+    logger.info("Summary exported to %s (%d records)", path, len(records))
     return len(records)
