@@ -135,6 +135,50 @@ print(f"Processed {result.processed}/{result.total} records in {result.duration_
 
 ---
 
+
+## Code Examples
+
+### Filter and Export
+
+```python
+from pathlib import Path
+from snowflake_pipeline.io import read_ndjson, write_ndjson
+from snowflake_pipeline.transformers import normalise_review
+from snowflake_pipeline.validators import validate_batch
+from snowflake_pipeline.filters import apply_filters, by_star_rating, by_date_range
+from snowflake_pipeline.export import to_csv
+from datetime import date
+
+records = read_ndjson(Path("reviews.ndjson"))
+normalised = [normalise_review(r) for r in records]
+valid, invalid = validate_batch(normalised)
+filtered = apply_filters(
+    valid,
+    by_star_rating(min_stars=4),
+    by_date_range(start=date(2024, 1, 1)),
+)
+to_csv(filtered, Path("high_rated_2024.csv"))
+print(f"Exported {len(filtered)} high-rated reviews")
+```
+
+### Aggregate Statistics
+
+```python
+from snowflake_pipeline.aggregators import summarise_reviews, rating_histogram, top_categories
+from snowflake_pipeline.validators import validation_report
+
+report = validation_report(records)
+print(f"Pass rate: {report['pass_rate']:.1%}")
+
+summary = summarise_reviews(valid)
+print(f"Avg rating: {summary.avg_star_rating:.2f}")
+print(f"Top categories: {top_categories(valid, n=3)}")
+
+hist = rating_histogram(valid)
+for stars, count in sorted(hist.items()):
+    print(f"  {stars}★: {count}")
+```
+
 ## API Reference
 
 ### Core (`snowflake_pipeline`)
