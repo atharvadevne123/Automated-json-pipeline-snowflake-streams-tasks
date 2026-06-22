@@ -234,6 +234,21 @@ python scripts/generate_report.py output/metrics.json
 ---
 
 
+
+## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full component diagram.
+
+**Data flow at a glance:**
+
+```
+NDJSON → io → transformers → validators → filters → batch_processor → export
+                                                                     ↘ metrics
+```
+
+The `ReviewPipeline` orchestrator in `pipeline.py` wires all stages together.
+Each stage is independently testable and composable.
+
 ## Performance
 
 Run the built-in benchmark to measure pipeline throughput on your machine:
