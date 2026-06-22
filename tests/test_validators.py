@@ -128,3 +128,24 @@ def test_validation_report_has_error_summary(valid_review):
     bad = {"review_id": "X", "star_rating": 99}
     report = validation_report([valid_review, bad])
     assert isinstance(report["error_summary"], dict)
+
+
+# ---------------------------------------------------------------------------
+# Parametrized invalid record cases
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("field,bad_value,error_fragment", [
+    ("star_rating", 6, "star_rating"),
+    ("star_rating", 0, "star_rating"),
+    ("star_rating", "five", "star_rating"),
+    ("verified_purchase", "maybe", "verified_purchase"),
+    ("review_date", "01-01-2024", "review_date"),
+    ("review_date", 20240101, "review_date"),
+    ("review_body", "", "review_body"),
+    ("review_body", "   ", "review_body"),
+])
+def test_validate_record_invalid_field(valid_review, field, bad_value, error_fragment):
+    from snowflake_pipeline.validators import validate_record
+    bad = dict(valid_review, **{field: bad_value})
+    errors = validate_record(bad)
+    assert any(error_fragment in e for e in errors), f"Expected '{error_fragment}' in errors: {errors}"
