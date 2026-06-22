@@ -140,3 +140,41 @@ def test_by_product_ids_empty_set():
     from snowflake_pipeline.filters import by_product_ids
     f = by_product_ids(set())
     assert f({"product_id": "B001"}) is False
+
+
+# ---------------------------------------------------------------------------
+# by_customer_ids
+# ---------------------------------------------------------------------------
+
+def test_by_customer_ids_match():
+    from snowflake_pipeline.filters import by_customer_ids
+    f = by_customer_ids({"C001", "C002"})
+    assert f({"customer_id": "C001"}) is True
+
+
+def test_by_customer_ids_no_match():
+    from snowflake_pipeline.filters import by_customer_ids
+    f = by_customer_ids({"C001"})
+    assert f({"customer_id": "C999"}) is False
+
+
+# ---------------------------------------------------------------------------
+# exclude_categories
+# ---------------------------------------------------------------------------
+
+def test_exclude_categories_excludes():
+    from snowflake_pipeline.filters import exclude_categories
+    f = exclude_categories({"Electronics"})
+    assert f({"product_category": "Electronics"}) is False
+
+
+def test_exclude_categories_keeps_others():
+    from snowflake_pipeline.filters import exclude_categories
+    f = exclude_categories({"Electronics"})
+    assert f({"product_category": "Books"}) is True
+
+
+def test_exclude_categories_empty_set():
+    from snowflake_pipeline.filters import exclude_categories
+    f = exclude_categories(set())
+    assert f({"product_category": "Electronics"}) is True
