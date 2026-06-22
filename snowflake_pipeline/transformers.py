@@ -9,6 +9,15 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "normalise_text",
+    "normalise_review",
+    "coerce_star_rating",
+    "coerce_verified_purchase",
+    "parse_review_date",
+    "flatten_for_csv",
+]
+
 _MULTI_SPACE_RE = re.compile(r"\s+")
 _CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
