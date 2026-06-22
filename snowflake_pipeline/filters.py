@@ -16,6 +16,8 @@ __all__ = [
     "apply_filters",
     "by_min_review_length",
     "by_product_ids",
+    "by_customer_ids",
+    "exclude_categories",
 ]
 
 FilterFn = Callable[[dict], bool]
@@ -139,4 +141,32 @@ def by_product_ids(product_ids: set[str]) -> FilterFn:
     """
     def _filter(record: dict) -> bool:
         return record.get("product_id", "") in product_ids
+    return _filter
+
+
+def by_customer_ids(customer_ids: set[str]) -> FilterFn:
+    """Return a filter that keeps records matching one of *customer_ids*.
+
+    Args:
+        customer_ids: Set of allowed customer_id values.
+
+    Returns:
+        Predicate function.
+    """
+    def _filter(record: dict) -> bool:
+        return record.get("customer_id", "") in customer_ids
+    return _filter
+
+
+def exclude_categories(categories: set[str]) -> FilterFn:
+    """Return a filter that excludes records in the given categories.
+
+    Args:
+        categories: Set of product_category values to exclude.
+
+    Returns:
+        Predicate function.
+    """
+    def _filter(record: dict) -> bool:
+        return record.get("product_category", "") not in categories
     return _filter
