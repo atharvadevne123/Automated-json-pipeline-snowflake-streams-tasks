@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import time
 from functools import wraps
 from typing import Callable, Type
@@ -22,6 +23,7 @@ def retry(
     base_delay: float = DEFAULT_RETRY_BASE_DELAY,
     max_delay: float = DEFAULT_RETRY_MAX_DELAY,
     exceptions: tuple[Type[Exception], ...] = (Exception,),
+    jitter: bool = False,
 ) -> Callable:
     """Decorator that retries the wrapped function on failure.
 
@@ -30,6 +32,7 @@ def retry(
         base_delay: Initial backoff in seconds (doubles each retry).
         max_delay: Upper bound on backoff delay.
         exceptions: Tuple of exception types to catch and retry.
+        jitter: If True, adds random jitter (0-50% of delay) to backoff.
 
     Returns:
         Decorator function.
@@ -53,7 +56,8 @@ def retry(
                         "Attempt %d/%d failed for %s: %s — retrying in %.1fs",
                         attempt, attempts, fn.__name__, exc, delay,
                     )
-                    time.sleep(delay)
+                    actual_delay = delay + random.uniform(0, delay * 0.5) if jitter else delay
+                    time.sleep(actual_delay)
                     delay = min(delay * 2, max_delay)
             raise RetryExhausted(attempts, last_exc)
         return wrapper
