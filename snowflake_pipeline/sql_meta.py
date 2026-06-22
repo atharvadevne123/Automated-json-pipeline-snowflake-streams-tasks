@@ -1,6 +1,13 @@
 """Lightweight SQL metadata extractor for Snowflake DDL scripts."""
 from __future__ import annotations
 
+
+__all__ = [
+    "SqlMetadata",
+    "extract_metadata",
+    "summarize",
+]
+
 import re
 from dataclasses import dataclass, field
 
