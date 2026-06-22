@@ -238,3 +238,35 @@ def test_load_sample_reviews_have_all_required_fields():
 
 def test_list_sql_returns_at_least_one():
     assert len(sp.list_sql()) >= 1
+
+
+# ---------------------------------------------------------------------------
+# ReviewPipeline.stats()
+# ---------------------------------------------------------------------------
+
+def test_pipeline_stats_returns_dict(ndjson_path_with_records, tmp_path):
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    pipeline = ReviewPipeline()
+    dst = tmp_path / "out.ndjson"
+    pipeline.run(ndjson_path_with_records, dst)
+    s = pipeline.stats()
+    assert isinstance(s, dict)
+    assert "run_id" in s
+    assert "processed_records" in s
+    assert "throughput_rps" in s
+
+
+def test_pipeline_stats_processed_gt_zero(ndjson_path_with_records, tmp_path):
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    pipeline = ReviewPipeline()
+    dst = tmp_path / "out.ndjson"
+    pipeline.run(ndjson_path_with_records, dst)
+    assert pipeline.stats()["processed_records"] > 0
+
+
+def test_pipeline_stats_duration_positive(ndjson_path_with_records, tmp_path):
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    pipeline = ReviewPipeline()
+    dst = tmp_path / "out.ndjson"
+    pipeline.run(ndjson_path_with_records, dst)
+    assert pipeline.stats()["duration_s"] >= 0
