@@ -125,3 +125,34 @@ def test_coerce_star_rating_parametrized(value, expected):
 def test_coerce_verified_purchase_parametrized(value, expected):
     from snowflake_pipeline.transformers import coerce_verified_purchase
     assert coerce_verified_purchase(value) == expected
+
+
+# ---------------------------------------------------------------------------
+# truncate_text
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text,max_chars,expected", [
+    ("Hello", 10, "Hello"),
+    ("Hello World", 8, "Hello W…"),
+    ("Hi", 2, "Hi"),
+    ("Hello", 3, "He…"),
+    ("", 5, ""),
+])
+def test_truncate_text(text, max_chars, expected):
+    from snowflake_pipeline.transformers import truncate_text
+    assert truncate_text(text, max_chars) == expected
+
+
+# ---------------------------------------------------------------------------
+# mask_customer_id
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("customer_id,visible,expected", [
+    ("C12345678", 4, "*****5678"),
+    ("C123", 4, "C123"),
+    ("AB", 4, "AB"),
+    ("ABCDE", 2, "***DE"),
+])
+def test_mask_customer_id(customer_id, visible, expected):
+    from snowflake_pipeline.transformers import mask_customer_id
+    assert mask_customer_id(customer_id, visible) == expected
