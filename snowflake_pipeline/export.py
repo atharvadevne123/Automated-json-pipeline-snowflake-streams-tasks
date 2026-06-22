@@ -12,6 +12,12 @@ from snowflake_pipeline.transformers import flatten_for_csv
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "to_csv",
+    "to_json",
+    "to_ndjson",
+]
+
 _REVIEW_CSV_FIELDS = (
     "review_id", "review_date", "customer_id", "product_id",
     "product_title", "product_category", "star_rating",
