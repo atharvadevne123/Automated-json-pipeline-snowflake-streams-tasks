@@ -79,3 +79,35 @@ def test_to_csv_empty_records_returns_zero(tmp_path):
 def test_to_json_raises_on_bad_path():
     with pytest.raises(ExportError):
         to_json([_review()], pathlib.Path("/no/such/directory/out.json"))
+
+
+# ---------------------------------------------------------------------------
+# export_summary
+# ---------------------------------------------------------------------------
+
+def test_export_summary_creates_file(tmp_path, sample_reviews):
+    from snowflake_pipeline.export import export_summary
+    p = tmp_path / "summary.json"
+    count = export_summary(sample_reviews, p)
+    assert p.exists()
+    assert count == len(sample_reviews)
+
+
+def test_export_summary_valid_json(tmp_path, valid_review):
+    from snowflake_pipeline.export import export_summary
+    import json
+    p = tmp_path / "summary.json"
+    export_summary([valid_review], p)
+    data = json.loads(p.read_text())
+    assert "total" in data
+    assert "avg_star_rating" in data
+    assert "star_distribution" in data
+
+
+def test_export_summary_empty_records(tmp_path):
+    from snowflake_pipeline.export import export_summary
+    import json
+    p = tmp_path / "empty_summary.json"
+    export_summary([], p)
+    data = json.loads(p.read_text())
+    assert data["total"] == 0
