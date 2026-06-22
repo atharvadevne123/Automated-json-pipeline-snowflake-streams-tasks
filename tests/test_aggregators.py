@@ -82,3 +82,56 @@ def test_group_by_missing_field():
     groups = group_by(records, "missing_field")
     assert "" in groups
     assert len(groups[""]) == 2
+
+
+# ---------------------------------------------------------------------------
+# count_by
+# ---------------------------------------------------------------------------
+
+def test_count_by_returns_dict():
+    from snowflake_pipeline.aggregators import count_by
+    records = [
+        {"product_category": "Books"},
+        {"product_category": "Books"},
+        {"product_category": "Electronics"},
+    ]
+    result = count_by(records, "product_category")
+    assert result["Books"] == 2
+    assert result["Electronics"] == 1
+
+
+def test_count_by_empty():
+    from snowflake_pipeline.aggregators import count_by
+    assert count_by([], "star_rating") == {}
+
+
+def test_count_by_missing_key():
+    from snowflake_pipeline.aggregators import count_by
+    records = [{"star_rating": 5}, {"other": 1}]
+    result = count_by(records, "star_rating")
+    assert result.get("5") == 1
+
+
+# ---------------------------------------------------------------------------
+# rating_histogram
+# ---------------------------------------------------------------------------
+
+def test_rating_histogram_all_stars():
+    from snowflake_pipeline.aggregators import rating_histogram
+    records = [{"star_rating": i} for i in range(1, 6)]
+    hist = rating_histogram(records)
+    assert all(hist[i] == 1 for i in range(1, 6))
+
+
+def test_rating_histogram_empty():
+    from snowflake_pipeline.aggregators import rating_histogram
+    hist = rating_histogram([])
+    assert hist == {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+
+def test_rating_histogram_skips_invalid():
+    from snowflake_pipeline.aggregators import rating_histogram
+    records = [{"star_rating": 6}, {"star_rating": 0}, {"star_rating": 3}]
+    hist = rating_histogram(records)
+    assert hist[3] == 1
+    assert hist[1] == 0
