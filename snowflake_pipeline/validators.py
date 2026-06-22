@@ -15,6 +15,13 @@ from snowflake_pipeline.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "ValidatorFn",
+    "REQUIRED_FIELDS",
+    "validate_record",
+    "validate_batch",
+]
+
 _DATE_RE = re.compile(DATE_PATTERN)
 
 ValidatorFn = Callable[[Any], list[str]]
