@@ -11,6 +11,11 @@ from snowflake_pipeline.exceptions import RetryExhausted
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "retry",
+    "retry_call",
+]
+
 
 def retry(
     attempts: int = DEFAULT_RETRY_ATTEMPTS,
