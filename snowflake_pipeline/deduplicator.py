@@ -8,6 +8,12 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "KeyFn",
+    "deduplicate",
+    "find_duplicates",
+]
+
 KeyFn = Callable[[dict], str]
 
 
