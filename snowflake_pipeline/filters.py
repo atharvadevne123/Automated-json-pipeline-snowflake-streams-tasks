@@ -14,6 +14,8 @@ __all__ = [
     "by_date_range",
     "by_category",
     "apply_filters",
+    "by_min_review_length",
+    "by_product_ids",
 ]
 
 FilterFn = Callable[[dict], bool]
@@ -105,3 +107,32 @@ def apply_filters(records: list[dict], *filters: FilterFn) -> list[dict]:
         result = [r for r in result if fn(r)]
     logger.debug("Filtered %d -> %d records", len(records), len(result))
     return result
+
+
+def by_min_review_length(min_chars: int = 10) -> FilterFn:
+    """Return a filter that keeps records with review_body longer than min_chars.
+
+    Args:
+        min_chars: Minimum character count for review_body (inclusive).
+
+    Returns:
+        Predicate function.
+    """
+    def _filter(record: dict) -> bool:
+        body = record.get("review_body", "")
+        return isinstance(body, str) and len(body) >= min_chars
+    return _filter
+
+
+def by_product_ids(product_ids: set[str]) -> FilterFn:
+    """Return a filter that keeps records matching one of *product_ids*.
+
+    Args:
+        product_ids: Set of allowed product_id values.
+
+    Returns:
+        Predicate function.
+    """
+    def _filter(record: dict) -> bool:
+        return record.get("product_id", "") in product_ids
+    return _filter
