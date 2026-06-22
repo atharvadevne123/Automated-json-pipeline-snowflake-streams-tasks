@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "PipelineMetrics",
+    "dump_metrics",
 ]
 
 
@@ -96,3 +97,20 @@ class PipelineMetrics:
         """
         path.write_text(self.to_json(), encoding="utf-8")
         logger.info("Run %s metrics saved to %s", self.run_id, path)
+
+
+def dump_metrics(metrics: "PipelineMetrics") -> str:
+    """Return a compact one-line summary of pipeline metrics for logging.
+
+    Args:
+        metrics: PipelineMetrics instance to summarise.
+
+    Returns:
+        Formatted string suitable for a single log line.
+    """
+    return (
+        f"run={metrics.run_id} total={metrics.total_records} "
+        f"valid={metrics.valid_records} invalid={metrics.invalid_records} "
+        f"processed={metrics.processed_records} failed={metrics.failed_records} "
+        f"duration={metrics.duration_s:.2f}s rps={metrics.throughput_rps:.1f}"
+    )
