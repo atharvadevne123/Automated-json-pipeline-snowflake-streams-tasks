@@ -10,6 +10,13 @@ from snowflake_pipeline.exceptions import PipelineError
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "read_ndjson",
+    "stream_ndjson",
+    "write_ndjson",
+    "read_json",
+]
+
 
 def read_ndjson(path: Path) -> list[dict]:
     """Read all records from a newline-delimited JSON file.
