@@ -7,6 +7,13 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "ReviewSummary",
+    "summarise_reviews",
+    "top_categories",
+    "group_by",
+]
+
 
 @dataclass
 class ReviewSummary:
