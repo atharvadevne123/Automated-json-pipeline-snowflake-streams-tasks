@@ -21,6 +21,7 @@ __all__ = [
     "chunk",
     "sanitize_identifier",
     "sample_records",
+    "format_duration",
 ]
 
 _DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
@@ -125,3 +126,24 @@ def sample_records(records: list[dict], n: int, seed: int | None = None) -> list
     result = rng.sample(records, n)
     logger.debug("Sampled %d records from %d total (seed=%s)", n, len(records), seed)
     return result
+
+
+def format_duration(seconds: float) -> str:
+    """Format *seconds* as a human-readable duration string.
+
+    Args:
+        seconds: Duration in seconds.
+
+    Returns:
+        String like "1h 23m 45s" or "2m 30s" or "45.2s".
+    """
+    if seconds < 0:
+        return "0s"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = seconds % 60
+    if hours > 0:
+        return f"{hours}h {minutes}m {secs:.0f}s"
+    if minutes > 0:
+        return f"{minutes}m {secs:.0f}s"
+    return f"{secs:.1f}s"
