@@ -60,3 +60,31 @@ def test_pipeline_config_from_env_no_snowflake():
 def test_pipeline_config_extra_dict():
     cfg = PipelineConfig(extra={"key": "val"})
     assert cfg.extra["key"] == "val"
+
+
+# ---------------------------------------------------------------------------
+# PipelineConfig.is_healthy()
+# ---------------------------------------------------------------------------
+
+def test_config_is_healthy_default():
+    from snowflake_pipeline.config import PipelineConfig
+    cfg = PipelineConfig()
+    assert cfg.is_healthy() is True
+
+
+def test_config_is_healthy_custom_batch_size():
+    from snowflake_pipeline.config import PipelineConfig
+    cfg = PipelineConfig(batch_size=500)
+    assert cfg.is_healthy() is True
+
+
+def test_config_not_healthy_zero_batch():
+    from snowflake_pipeline.config import PipelineConfig
+    cfg = PipelineConfig(batch_size=0)
+    assert cfg.is_healthy() is False
+
+
+def test_config_not_healthy_zero_retries():
+    from snowflake_pipeline.config import PipelineConfig
+    cfg = PipelineConfig(retry_attempts=0)
+    assert cfg.is_healthy() is False
