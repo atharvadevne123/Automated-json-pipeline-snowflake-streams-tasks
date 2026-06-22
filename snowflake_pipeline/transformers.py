@@ -16,6 +16,8 @@ __all__ = [
     "coerce_verified_purchase",
     "parse_review_date",
     "flatten_for_csv",
+    "truncate_text",
+    "mask_customer_id",
 ]
 
 _MULTI_SPACE_RE = re.compile(r"\s+")
@@ -128,3 +130,35 @@ def flatten_for_csv(record: dict) -> dict:
         Dict with all values converted to strings.
     """
     return {k: str(v) if v is not None else "" for k, v in record.items()}
+
+
+def truncate_text(value: str, max_chars: int, suffix: str = "…") -> str:
+    """Truncate *value* to *max_chars*, appending *suffix* if truncated.
+
+    Args:
+        value: Input string.
+        max_chars: Maximum character count (including suffix).
+        suffix: String appended when truncation occurs.
+
+    Returns:
+        Original string if short enough, otherwise truncated with suffix.
+    """
+    if len(value) <= max_chars:
+        return value
+    cut = max(0, max_chars - len(suffix))
+    return value[:cut] + suffix
+
+
+def mask_customer_id(customer_id: str, visible: int = 4) -> str:
+    """Mask all but the last *visible* characters of a customer_id.
+
+    Args:
+        customer_id: Raw customer identifier.
+        visible: Number of trailing characters to keep visible.
+
+    Returns:
+        Masked string, e.g. "****5678" for customer_id "C12345678".
+    """
+    if len(customer_id) <= visible:
+        return customer_id
+    return "*" * (len(customer_id) - visible) + customer_id[-visible:]
