@@ -1,6 +1,7 @@
 """General-purpose utility helpers for the pipeline."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import logging
 import re
@@ -34,6 +35,7 @@ def today_iso() -> str:
     return date.today().isoformat()
 
 
+@functools.lru_cache(maxsize=1024)
 def is_valid_date(value: str) -> bool:
     """Return True when *value* matches YYYY-MM-DD format.
 
