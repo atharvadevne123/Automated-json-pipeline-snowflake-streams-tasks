@@ -84,3 +84,15 @@ class PipelineConfig:
             cfg.snowflake = SnowflakeConfig.from_env()
         logger.debug("PipelineConfig loaded (batch_size=%d)", cfg.batch_size)
         return cfg
+
+    def is_healthy(self) -> bool:
+        """Return True when this config has valid non-default values.
+
+        Returns:
+            True if batch_size and retry_attempts are positive integers.
+        """
+        return (
+            isinstance(self.batch_size, int) and self.batch_size > 0
+            and isinstance(self.retry_attempts, int) and self.retry_attempts > 0
+            and isinstance(self.retry_base_delay, float) and self.retry_base_delay >= 0
+        )
