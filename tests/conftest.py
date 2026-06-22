@@ -64,3 +64,23 @@ def ndjson_path_with_records(tmp_path: pathlib.Path, valid_review: dict) -> path
             rec = dict(valid_review, review_id=f"R{i:03d}")
             fh.write(json.dumps(rec) + "\n")
     return p
+
+
+@pytest.fixture()
+def multi_category_reviews(valid_review: dict) -> list[dict]:
+    """Return reviews spanning Electronics, Books, and Sports categories."""
+    categories = ["Electronics", "Books", "Sports"]
+    return [
+        dict(valid_review, review_id=f"R{i:03d}", product_category=cat, star_rating=(i % 5) + 1)
+        for i, cat in enumerate(categories * 3)
+    ]
+
+
+@pytest.fixture()
+def mixed_validity_reviews(valid_review: dict, invalid_review: dict) -> list[dict]:
+    """Return a list with both valid and invalid review records."""
+    valid1 = dict(valid_review, review_id="R101")
+    valid2 = dict(valid_review, review_id="R102", star_rating=3)
+    bad1 = dict(invalid_review, review_id="R901")
+    bad2 = {"review_id": "R902", "star_rating": 99}
+    return [valid1, bad1, valid2, bad2]
