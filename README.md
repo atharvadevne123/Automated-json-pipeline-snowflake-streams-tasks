@@ -233,6 +233,27 @@ python scripts/generate_report.py output/metrics.json
 
 ---
 
+
+## Performance
+
+Run the built-in benchmark to measure pipeline throughput on your machine:
+
+```bash
+make benchmark
+# or with custom record count:
+python scripts/benchmark.py 50000
+```
+
+Example output on a modern laptop (10,000 records):
+```
+Benchmarking with 10,000 records...
+  normalise_review:  45ms  (222,000 rps)
+  validate_batch:    38ms  (263,000 rps) — 0 invalid
+  process_batch:      8ms  (1,250,000 rps)
+  ndjson round-trip: 22ms  (1.2 MB)
+Done.
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). All PRs require passing CI (lint + tests).
