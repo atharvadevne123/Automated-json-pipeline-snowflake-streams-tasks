@@ -92,3 +92,39 @@ def test_validate_batch_all_invalid():
 def test_validate_batch_empty():
     valid, invalid = validate_batch([])
     assert valid == [] and invalid == []
+
+
+# ---------------------------------------------------------------------------
+# validation_report
+# ---------------------------------------------------------------------------
+
+def test_validation_report_all_valid(valid_review):
+    from snowflake_pipeline.validators import validation_report
+    report = validation_report([valid_review])
+    assert report["total"] == 1
+    assert report["valid_count"] == 1
+    assert report["invalid_count"] == 0
+    assert report["pass_rate"] == 1.0
+
+
+def test_validation_report_some_invalid(valid_review):
+    from snowflake_pipeline.validators import validation_report
+    bad = {"review_id": "BAD"}
+    report = validation_report([valid_review, bad])
+    assert report["total"] == 2
+    assert report["valid_count"] == 1
+    assert report["invalid_count"] == 1
+
+
+def test_validation_report_empty():
+    from snowflake_pipeline.validators import validation_report
+    report = validation_report([])
+    assert report["total"] == 0
+    assert report["pass_rate"] == 1.0
+
+
+def test_validation_report_has_error_summary(valid_review):
+    from snowflake_pipeline.validators import validation_report
+    bad = {"review_id": "X", "star_rating": 99}
+    report = validation_report([valid_review, bad])
+    assert isinstance(report["error_summary"], dict)
