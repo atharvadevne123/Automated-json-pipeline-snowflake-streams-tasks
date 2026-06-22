@@ -15,6 +15,7 @@ __all__ = [
     "stream_ndjson",
     "write_ndjson",
     "read_json",
+    "read_csv",
 ]
 
 
@@ -112,3 +113,29 @@ def read_json(path: Path) -> dict | list:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise PipelineError(f"Cannot read JSON from {path}: {exc}") from exc
+
+
+def read_csv(path: Path, encoding: str = "utf-8") -> list[dict]:
+    """Read records from a CSV file with headers.
+
+    Args:
+        path: Path to the .csv file.
+        encoding: File encoding (default: utf-8).
+
+    Returns:
+        List of dicts (one per row, using header row as keys).
+
+    Raises:
+        PipelineError: on I/O or parse errors.
+    """
+    import csv as _csv
+    records: list[dict] = []
+    try:
+        with path.open(newline="", encoding=encoding) as fh:
+            reader = _csv.DictReader(fh)
+            for row in reader:
+                records.append(dict(row))
+    except OSError as exc:
+        raise PipelineError(f"Cannot read CSV from {path}: {exc}") from exc
+    logger.debug("Read %d records from CSV %s", len(records), path)
+    return records
