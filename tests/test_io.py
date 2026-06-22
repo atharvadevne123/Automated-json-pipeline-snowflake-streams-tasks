@@ -88,3 +88,31 @@ def test_read_json_list(tmp_path):
 def test_read_json_missing_raises(tmp_path):
     with pytest.raises(PipelineError):
         read_json(tmp_path / "no.json")
+
+
+# ---------------------------------------------------------------------------
+# read_csv
+# ---------------------------------------------------------------------------
+
+def test_read_csv_basic(tmp_path):
+    from snowflake_pipeline.io import read_csv
+    p = tmp_path / "data.csv"
+    p.write_text("review_id,star_rating\nR001,5\nR002,3\n")
+    records = read_csv(p)
+    assert len(records) == 2
+    assert records[0]["review_id"] == "R001"
+    assert records[1]["star_rating"] == "3"
+
+
+def test_read_csv_missing_file(tmp_path):
+    from snowflake_pipeline.io import read_csv
+    from snowflake_pipeline.exceptions import PipelineError
+    with pytest.raises(PipelineError):
+        read_csv(tmp_path / "no_such.csv")
+
+
+def test_read_csv_returns_list(tmp_path):
+    from snowflake_pipeline.io import read_csv
+    p = tmp_path / "empty.csv"
+    p.write_text("review_id,star_rating\n")
+    assert read_csv(p) == []
