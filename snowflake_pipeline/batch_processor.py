@@ -12,6 +12,12 @@ from snowflake_pipeline.utils import chunk
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "BatchResult",
+    "process_batch",
+    "process_stream",
+]
+
 
 @dataclass
 class BatchResult:
