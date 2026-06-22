@@ -30,3 +30,12 @@ clean:
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name htmlcov -exec rm -rf {} + 2>/dev/null || true
 	rm -f .coverage
+
+benchmark:
+	python scripts/benchmark.py
+
+check-env:
+	python scripts/check_env.py
+
+export-metrics:
+	@echo "Usage: make export-metrics source=<in.ndjson> dest=<out.ndjson>"
