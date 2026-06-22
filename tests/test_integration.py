@@ -77,3 +77,51 @@ def test_sql_metadata_from_bundled_script():
     assert len(meta.tables) >= 5
     assert len(meta.tasks) >= 1
     assert len(meta.streams) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Extended integration scenarios
+# ---------------------------------------------------------------------------
+
+def test_pipeline_with_deduplication(ndjson_path_with_records, tmp_path, valid_review):
+    """Pipeline should handle duplicate records gracefully."""
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    from snowflake_pipeline.deduplicator import deduplicate
+    from snowflake_pipeline.io import read_ndjson, write_ndjson
+    # Write duplicated records
+    dupe_path = tmp_path / "dupes.ndjson"
+    records = [dict(valid_review, review_id="R001")] * 5
+    write_ndjson(records, dupe_path)
+    deduped = deduplicate(read_ndjson(dupe_path))
+    assert len(deduped) == 1
+
+
+def test_full_pipeline_with_filter_and_summary(ndjson_path_with_records, tmp_path, sample_reviews):
+    """End-to-end: filter -> process -> export summary."""
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    from snowflake_pipeline.filters import by_star_rating
+    from snowflake_pipeline.export import export_summary
+    from snowflake_pipeline.io import write_ndjson
+    import json
+
+    src = tmp_path / "in.ndjson"
+    dst = tmp_path / "out.ndjson"
+    summary_path = tmp_path / "summary.json"
+    write_ndjson(sample_reviews, src)
+
+    pipeline = ReviewPipeline()
+    pipeline.run(src, dst, filters=[by_star_rating(min_stars=4)])
+    export_summary(sample_reviews, summary_path)
+
+    data = json.loads(summary_path.read_text())
+    assert "total" in data
+    assert data["total"] == len(sample_reviews)
+
+
+def test_pipeline_metrics_populated(ndjson_path_with_records, tmp_path):
+    from snowflake_pipeline.pipeline import ReviewPipeline
+    pipeline = ReviewPipeline()
+    dst = tmp_path / "out.ndjson"
+    pipeline.run(ndjson_path_with_records, dst)
+    assert pipeline.metrics.processed_records > 0
+    assert pipeline.metrics.duration_s > 0
