@@ -68,3 +68,31 @@ def test_find_duplicates_no_duplicates():
 
 def test_find_duplicates_empty():
     assert find_duplicates([]) == {}
+
+
+# ---------------------------------------------------------------------------
+# Additional edge cases
+# ---------------------------------------------------------------------------
+
+def test_deduplicate_empty_review_id():
+    from snowflake_pipeline.deduplicator import deduplicate
+    records = [{"review_id": ""}, {"review_id": "R001"}]
+    result = deduplicate(records)
+    # empty string key is falsy, so both records are kept
+    assert len(result) == 2
+
+
+def test_find_duplicates_no_duplicates():
+    from snowflake_pipeline.deduplicator import find_duplicates
+    records = [{"review_id": "R001"}, {"review_id": "R002"}]
+    assert find_duplicates(records) == {}
+
+
+def test_deduplicate_keep_last():
+    from snowflake_pipeline.deduplicator import deduplicate
+    records = [
+        {"review_id": "R001", "star_rating": 5},
+        {"review_id": "R001", "star_rating": 3},
+    ]
+    result = deduplicate(records, keep="last")
+    assert result[0]["star_rating"] == 3
