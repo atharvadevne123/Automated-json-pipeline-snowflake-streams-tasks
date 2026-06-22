@@ -87,3 +87,35 @@ def test_chunk_invalid_size():
 ])
 def test_sanitize_identifier(raw, expected):
     assert sanitize_identifier(raw) == expected
+
+
+# ---------------------------------------------------------------------------
+# sample_records
+# ---------------------------------------------------------------------------
+
+def test_sample_records_reduces_count():
+    from snowflake_pipeline.utils import sample_records
+    records = [{"id": i} for i in range(100)]
+    result = sample_records(records, 10)
+    assert len(result) == 10
+
+
+def test_sample_records_reproducible():
+    from snowflake_pipeline.utils import sample_records
+    records = [{"id": i} for i in range(100)]
+    r1 = sample_records(records, 10, seed=42)
+    r2 = sample_records(records, 10, seed=42)
+    assert r1 == r2
+
+
+def test_sample_records_returns_all_when_small():
+    from snowflake_pipeline.utils import sample_records
+    records = [{"id": i} for i in range(5)]
+    result = sample_records(records, 10)
+    assert len(result) == 5
+
+
+def test_sample_records_invalid_n():
+    from snowflake_pipeline.utils import sample_records
+    with pytest.raises(ValueError):
+        sample_records([], 0)
