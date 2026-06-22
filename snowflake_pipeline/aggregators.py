@@ -12,6 +12,8 @@ __all__ = [
     "summarise_reviews",
     "top_categories",
     "group_by",
+    "count_by",
+    "rating_histogram",
 ]
 
 
@@ -94,3 +96,37 @@ def group_by(records: list[dict], key: str) -> dict[str, list[dict]]:
         groups.setdefault(val, []).append(rec)
     logger.debug("Grouped %d records by %r into %d groups", len(records), key, len(groups))
     return groups
+
+
+def count_by(records: list[dict], key: str) -> dict[str, int]:
+    """Count records by a specific field value.
+
+    Args:
+        records: List of review dicts.
+        key: Field name to count by.
+
+    Returns:
+        Dict mapping field values to occurrence counts, sorted by count descending.
+    """
+    counts: Counter = Counter(str(r.get(key, "")) for r in records)
+    result = dict(counts.most_common())
+    logger.debug("Counted %d distinct values for key %r across %d records", len(result), key, len(records))
+    return result
+
+
+def rating_histogram(records: list[dict]) -> dict[int, int]:
+    """Build a star-rating histogram from review records.
+
+    Args:
+        records: List of review dicts.
+
+    Returns:
+        Dict mapping star rating (1-5) to count, including zero-count stars.
+    """
+    hist = {i: 0 for i in range(1, 6)}
+    for rec in records:
+        rating = rec.get("star_rating")
+        if isinstance(rating, int) and 1 <= rating <= 5:
+            hist[rating] += 1
+    logger.debug("Built rating histogram from %d records", len(records))
+    return hist
