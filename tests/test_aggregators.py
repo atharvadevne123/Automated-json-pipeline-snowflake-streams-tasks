@@ -135,3 +135,27 @@ def test_rating_histogram_skips_invalid():
     hist = rating_histogram(records)
     assert hist[3] == 1
     assert hist[1] == 0
+
+
+# ---------------------------------------------------------------------------
+# field_stats
+# ---------------------------------------------------------------------------
+
+def test_field_stats_computes_mean(sample_reviews):
+    from snowflake_pipeline.aggregators import field_stats
+    stats = field_stats(sample_reviews, "star_rating")
+    assert stats["non_null"] > 0
+    assert 1.0 <= stats["mean"] <= 5.0
+
+
+def test_field_stats_empty_records():
+    from snowflake_pipeline.aggregators import field_stats
+    stats = field_stats([], "star_rating")
+    assert stats["count"] == 0
+    assert stats["mean"] is None
+
+
+def test_field_stats_missing_field(sample_reviews):
+    from snowflake_pipeline.aggregators import field_stats
+    stats = field_stats(sample_reviews, "nonexistent_field")
+    assert stats["non_null"] == 0
