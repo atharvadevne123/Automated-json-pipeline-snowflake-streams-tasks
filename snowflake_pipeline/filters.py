@@ -102,8 +102,12 @@ def apply_filters(records: list[dict], *filters: FilterFn) -> list[dict]:
     Returns:
         Filtered list.
     """
+    if not records or not filters:
+        return list(records)
     result = records
     for fn in filters:
+        if not result:
+            break
         result = [r for r in result if fn(r)]
     logger.debug("Filtered %d -> %d records", len(records), len(result))
     return result
