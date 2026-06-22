@@ -83,3 +83,45 @@ def test_flatten_for_csv_converts_all_to_strings():
     assert flat["rating"] == "5"
     assert flat["vp"] == "True"
     assert flat["body"] == ""
+
+
+# ---------------------------------------------------------------------------
+# Parametrized edge cases
+# ---------------------------------------------------------------------------
+
+import pytest
+
+@pytest.mark.parametrize("value,expected", [
+    (1, 1),
+    (5, 5),
+    (3, 3),
+    (1.9, 1),
+    ("4", 4),
+    ("5.9", 5),
+    (0, None),
+    (6, None),
+    ("bad", None),
+    (None, None),
+])
+def test_coerce_star_rating_parametrized(value, expected):
+    from snowflake_pipeline.transformers import coerce_star_rating
+    assert coerce_star_rating(value) == expected
+
+
+@pytest.mark.parametrize("value,expected", [
+    (True, "Y"),
+    (False, "N"),
+    ("Y", "Y"),
+    ("yes", "Y"),
+    ("TRUE", "Y"),
+    ("1", "Y"),
+    ("N", "N"),
+    ("no", "N"),
+    ("FALSE", "N"),
+    ("0", "N"),
+    ("maybe", None),
+    (None, None),
+])
+def test_coerce_verified_purchase_parametrized(value, expected):
+    from snowflake_pipeline.transformers import coerce_verified_purchase
+    assert coerce_verified_purchase(value) == expected
