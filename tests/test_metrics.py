@@ -76,3 +76,26 @@ def test_save_to_file(tmp_path: pathlib.Path):
     data = json.loads(p.read_text())
     assert data["run_id"] == "r2"
     assert data["total_records"] == 5
+
+
+# ---------------------------------------------------------------------------
+# dump_metrics
+# ---------------------------------------------------------------------------
+
+def test_dump_metrics_returns_string():
+    from snowflake_pipeline.metrics import dump_metrics, PipelineMetrics
+    m = PipelineMetrics(run_id="abc123")
+    result = dump_metrics(m)
+    assert isinstance(result, str)
+
+
+def test_dump_metrics_contains_run_id():
+    from snowflake_pipeline.metrics import dump_metrics, PipelineMetrics
+    m = PipelineMetrics(run_id="abc123")
+    assert "abc123" in dump_metrics(m)
+
+
+def test_dump_metrics_contains_processed():
+    from snowflake_pipeline.metrics import dump_metrics, PipelineMetrics
+    m = PipelineMetrics(run_id="xyz", processed_records=42)
+    assert "42" in dump_metrics(m)
