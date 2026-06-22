@@ -96,3 +96,47 @@ def test_apply_filters_no_filters():
 
 def test_apply_filters_empty_records():
     assert apply_filters([], by_star_rating()) == []
+
+
+# ---------------------------------------------------------------------------
+# by_min_review_length
+# ---------------------------------------------------------------------------
+
+def test_by_min_review_length_passes_long():
+    from snowflake_pipeline.filters import by_min_review_length
+    f = by_min_review_length(10)
+    assert f({"review_body": "A" * 10}) is True
+
+
+def test_by_min_review_length_fails_short():
+    from snowflake_pipeline.filters import by_min_review_length
+    f = by_min_review_length(10)
+    assert f({"review_body": "Short"}) is False
+
+
+def test_by_min_review_length_missing_field():
+    from snowflake_pipeline.filters import by_min_review_length
+    f = by_min_review_length(1)
+    assert f({}) is False
+
+
+# ---------------------------------------------------------------------------
+# by_product_ids
+# ---------------------------------------------------------------------------
+
+def test_by_product_ids_match():
+    from snowflake_pipeline.filters import by_product_ids
+    f = by_product_ids({"B001", "B002"})
+    assert f({"product_id": "B001"}) is True
+
+
+def test_by_product_ids_no_match():
+    from snowflake_pipeline.filters import by_product_ids
+    f = by_product_ids({"B001"})
+    assert f({"product_id": "B999"}) is False
+
+
+def test_by_product_ids_empty_set():
+    from snowflake_pipeline.filters import by_product_ids
+    f = by_product_ids(set())
+    assert f({"product_id": "B001"}) is False
