@@ -89,7 +89,6 @@ def test_flatten_for_csv_converts_all_to_strings():
 # Parametrized edge cases
 # ---------------------------------------------------------------------------
 
-import pytest
 
 @pytest.mark.parametrize("value,expected", [
     (1, 1),
