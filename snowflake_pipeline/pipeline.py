@@ -74,3 +74,22 @@ class ReviewPipeline:
             self.metrics.run_id, len(processed), destination,
         )
         return result
+
+    def stats(self) -> dict:
+        """Return a summary dict of the last pipeline run metrics.
+
+        Returns:
+            Dict with run statistics (run_id, duration_s, throughput_rps, counts).
+        """
+        m = self.metrics
+        return {
+            "run_id": m.run_id,
+            "total_records": m.total_records,
+            "valid_records": m.valid_records,
+            "invalid_records": m.invalid_records,
+            "processed_records": m.processed_records,
+            "failed_records": m.failed_records,
+            "batches_processed": m.batches_processed,
+            "duration_s": round(m.duration_s, 4),
+            "throughput_rps": round(m.throughput_rps, 2),
+        }
