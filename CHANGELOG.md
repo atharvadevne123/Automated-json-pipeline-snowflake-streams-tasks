@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026-06-22] — Pipeline Enhancement
+
+### Added
+- `count_by` and `rating_histogram` aggregation helpers
+- `validation_report` for structured error summaries
+- `sample_records` utility for random record sampling
+- `read_csv` I/O helper for CSV ingestion
+- `export_summary` to export aggregate statistics as JSON
+- `by_min_review_length` and `by_product_ids` filter predicates
+- `dump_metrics` helper for compact log-line metric output
+- `jitter` parameter in `retry` decorator for thundering-herd prevention
+- `__all__` exports in all modules for clean public API surface
+- `scripts/benchmark.py`, `scripts/check_env.py`, `scripts/export_metrics.py`
+- GitHub issue templates and PR template
+- `docs/ARCHITECTURE.md` with component diagram
+- `lru_cache` on `is_valid_date` for repeated date validation calls
+- Test fixtures: `multi_category_reviews`, `mixed_validity_reviews`
+- Parametrized edge-case tests for transformers and validators
 ## [Unreleased]
 
 ## [1.1.0] — 2026-05-01
