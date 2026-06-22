@@ -80,3 +80,39 @@ def test_retry_preserves_return_value_with_kwargs():
         return x * multiplier
 
     assert fn(4, multiplier=3) == 12
+
+
+# ---------------------------------------------------------------------------
+# jitter parameter
+# ---------------------------------------------------------------------------
+
+def test_retry_with_jitter_succeeds():
+    from snowflake_pipeline.retry import retry
+    call_count = 0
+
+    @retry(attempts=3, base_delay=0.001, jitter=True)
+    def flaky():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 2:
+            raise ValueError("not yet")
+        return "ok"
+
+    result = flaky()
+    assert result == "ok"
+    assert call_count == 2
+
+
+def test_retry_without_jitter_is_deterministic():
+    from snowflake_pipeline.retry import retry
+    from snowflake_pipeline.exceptions import RetryExhausted
+    attempts_made = []
+
+    @retry(attempts=2, base_delay=0.001, jitter=False)
+    def always_fails():
+        attempts_made.append(1)
+        raise RuntimeError("always")
+
+    with pytest.raises(RetryExhausted):
+        always_fails()
+    assert len(attempts_made) == 2
