@@ -20,6 +20,7 @@ __all__ = [
     "REQUIRED_FIELDS",
     "validate_record",
     "validate_batch",
+    "validation_report",
 ]
 
 _DATE_RE = re.compile(DATE_PATTERN)
@@ -147,3 +148,32 @@ def validate_batch(records: list[dict]) -> tuple[list[dict], list[tuple[dict, li
         len(valid), len(invalid), len(records),
     )
     return valid, invalid
+
+
+def validation_report(records: list[dict]) -> dict:
+    """Generate a structured validation report for a list of records.
+
+    Args:
+        records: List of review dicts to validate.
+
+    Returns:
+        Dict with keys: total, valid_count, invalid_count, error_summary.
+    """
+    valid, invalid = validate_batch(records)
+    error_summary: dict[str, int] = {}
+    for _, errs in invalid:
+        for err in errs:
+            key = err.split("must")[0].strip() if "must" in err else err[:40]
+            error_summary[key] = error_summary.get(key, 0) + 1
+    report = {
+        "total": len(records),
+        "valid_count": len(valid),
+        "invalid_count": len(invalid),
+        "pass_rate": len(valid) / len(records) if records else 1.0,
+        "error_summary": error_summary,
+    }
+    logger.info(
+        "Validation report: %d/%d passed (%.1f%%)",
+        report["valid_count"], report["total"], report["pass_rate"] * 100,
+    )
+    return report
