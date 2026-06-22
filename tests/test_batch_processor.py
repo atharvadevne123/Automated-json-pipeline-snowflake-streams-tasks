@@ -84,3 +84,32 @@ def test_process_batch_empty():
 def test_process_batch_duration_positive():
     result = process_batch([{"id": 1}], _noop)
     assert result.duration_s >= 0
+
+
+# ---------------------------------------------------------------------------
+# process_stream
+# ---------------------------------------------------------------------------
+
+def test_process_stream_handles_generator():
+    from snowflake_pipeline.batch_processor import process_stream
+    collected = []
+    records = ({"id": i} for i in range(10))
+    result = process_stream(records, collected.append, batch_size=3)
+    assert result.processed == 10
+    assert len(collected) == 10
+
+
+def test_process_stream_empty():
+    from snowflake_pipeline.batch_processor import process_stream
+    result = process_stream(iter([]), lambda r: None)
+    assert result.total == 0
+    assert result.processed == 0
+
+
+def test_process_stream_partial_batch():
+    from snowflake_pipeline.batch_processor import process_stream
+    collected = []
+    records = iter([{"id": i} for i in range(5)])
+    result = process_stream(records, collected.append, batch_size=4)
+    assert result.processed == 5
+    assert len(collected) == 5
