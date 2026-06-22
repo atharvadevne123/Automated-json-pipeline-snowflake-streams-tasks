@@ -20,6 +20,7 @@ __all__ = [
     "sha256_of_file",
     "chunk",
     "sanitize_identifier",
+    "sample_records",
 ]
 
 _DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
@@ -102,3 +103,25 @@ def sanitize_identifier(name: str) -> str:
         Cleaned string (only letters, digits, underscores).
     """
     return re.sub(r"[^\w]", "_", name, flags=re.ASCII)
+
+
+def sample_records(records: list[dict], n: int, seed: int | None = None) -> list[dict]:
+    """Return up to *n* randomly sampled records.
+
+    Args:
+        records: Source list of dicts.
+        n: Maximum number of records to return.
+        seed: Optional random seed for reproducibility.
+
+    Returns:
+        Sampled list (or the full list if len(records) <= n).
+    """
+    import random as _random
+    if n <= 0:
+        raise ValueError(f"n must be > 0, got {n}")
+    if len(records) <= n:
+        return list(records)
+    rng = _random.Random(seed)
+    result = rng.sample(records, n)
+    logger.debug("Sampled %d records from %d total (seed=%s)", n, len(records), seed)
+    return result
