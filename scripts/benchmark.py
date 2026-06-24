@@ -12,9 +12,9 @@ logging.basicConfig(level=logging.WARNING)
 
 try:
     from snowflake_pipeline.batch_processor import process_batch
+    from snowflake_pipeline.io import read_ndjson, write_ndjson
     from snowflake_pipeline.transformers import normalise_review
     from snowflake_pipeline.validators import validate_batch
-    from snowflake_pipeline.io import write_ndjson, read_ndjson
 except ImportError as e:
     print(f"ERROR: snowflake_pipeline not installed. Run: pip install -e .\n{e}")
     raise SystemExit(1)
