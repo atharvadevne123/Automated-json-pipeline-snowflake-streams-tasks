@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
 from pathlib import Path
@@ -11,9 +10,9 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 try:
-    from snowflake_pipeline.pipeline import ReviewPipeline
     from snowflake_pipeline.config import PipelineConfig
     from snowflake_pipeline.metrics import dump_metrics
+    from snowflake_pipeline.pipeline import ReviewPipeline
 except ImportError as e:
     print(f"ERROR: snowflake_pipeline not installed. Run: pip install -e .\n{e}")
     sys.exit(1)
